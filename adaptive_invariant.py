@@ -275,3 +275,4 @@ with torch.no_grad():
 plt.figure()
 plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
 plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+plt.savefig("comparision.png")
