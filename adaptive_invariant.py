@@ -13,6 +13,7 @@ from torch import nn
 from torch.autograd import Variable
 import numpy as np
 from tqdm import tqdm
+import random
 import argparse
 # %matplotlib inline
 
@@ -23,6 +24,10 @@ from models.adap_invar import AdaptiveInvariantNN, AdaptiveInvariantNNTrainer
 
 
 if __name__ == '__main__':
+  torch.manual_seed(0)
+  random.seed(0)
+  np.random.seed(0)
+
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
@@ -34,6 +39,9 @@ if __name__ == '__main__':
   # synthetic dataset specifics
   parser.add_argument('--syn_dataset_train_size', type=int, default= 128, help='size of synthetic dataset per env')
   parser.add_argument('--syn_dataset_test_size', type=int, default= 5, help='size of synthetic dataset per env')
+
+  # misc
+  parser.add_argument('-print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
 
   args = parser.parse_args()
 
@@ -78,17 +86,19 @@ if __name__ == '__main__':
   with torch.no_grad(): 
     y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
 
-  plt.figure()
-  plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-  plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-  plt.savefig("comparision_before.png")
+
+  if args.print_base_graph:
+    plt.figure()
+    plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+    plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+    plt.savefig("comparision_before.png")
 
   # Run Experiment
-  print("training")
+  print("training...")
   # train
   trainer.train(train_dataset, args.batch_size)
 
-  print("test")
+  print("test...")
   # test
   trainer.test(test_dataset)
 
@@ -96,7 +106,8 @@ if __name__ == '__main__':
   with torch.no_grad(): 
     y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
 
-  plt.figure()
-  plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-  plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-  plt.savefig("comparision_after.png")
+  if args.print_base_graph:
+    plt.figure()
+    plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+    plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+    plt.savefig("comparision_after.png")

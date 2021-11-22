@@ -16,9 +16,9 @@ class AdaptiveInvariantNN(nn.Module):
 
     # Define \Phi
     self.Phi = nn.Sequential(
-            nn.Linear(input_dim, 5),
+            nn.Linear(input_dim, 10),
             nn.ReLU(),
-            nn.Linear(5, self.phi_odim)
+            nn.Linear(10, self.phi_odim)
         )
 
     # Define \beta
@@ -82,11 +82,11 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
-    self.test_inner_optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2)
+    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_phi()
-    self.outer_optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-2)
 
     self.reg_lambda = reg_lambda
 
@@ -105,7 +105,7 @@ class AdaptiveInvariantNNTrainer():
           loss = 0
           for x, y in batchify(train_dataset[env_ind], batch_size):
             f_beta, f_eta, _ = self.model(x, env_ind)
-            loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.sum(torch.pow(f_beta * f_eta, 2))
+            loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.mean(torch.pow(f_beta * f_eta, 2))
 
           self.inner_optimizer.zero_grad()
           loss.backward()
@@ -150,23 +150,24 @@ class AdaptiveInvariantNNTrainer():
 
     # test set is ususally small
     for i in range(n_loop):
+      loss = 0
       for x, y in batchify(test_dataset, batch_size):
         f_beta, f_eta, _ = self.model(x, 0)
 
-        loss = self.criterion(f_beta + f_eta, y) 
+        loss += self.criterion(f_beta + f_eta, y) 
 
-        self.outer_optimizer.zero_grad()
-        loss.backward()
-        self.outer_optimizer.step()
+      self.test_inner_optimizer.zero_grad()
+      loss.backward()
+      self.test_inner_optimizer.step()
 
-        """ projected gradient descent """
-        with torch.no_grad():
-          v = M @ self.model.beta 
-          norm = v.T @ v
-          alpha = self.model.etas[0].T @ v
-          self.model.etas[0].sub_(alpha * v/norm)
+      """ projected gradient descent """
+      with torch.no_grad():
+        v = M @ self.model.beta 
+        norm = v.T @ v
+        alpha = self.model.etas[0].T @ v
+        self.model.etas[0].sub_(alpha * v/norm)
 
       if i % 10 == 0:
-          print(loss.item()/batch_size) 
+          print(loss.item()/test_dataset[0].shape[0]) 
 
 
