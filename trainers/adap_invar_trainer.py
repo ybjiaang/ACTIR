@@ -81,7 +81,7 @@ class AdaptiveInvariantNNTrainer():
         print(phi_loss.item()/(n_train_envs*batch_size))
 
   
-  def test(self, test_dataset, batch_size = 32):
+  def test(self, test_dataset, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])
     self.model.eval()
     loss = 0
@@ -94,8 +94,9 @@ class AdaptiveInvariantNNTrainer():
       base_loss += self.criterion(f_beta, y) 
       batch_num += 1
 
-    print(f"Test loss {loss.item()/batch_num}")
-    print(f"Bse Test loss {base_loss.item()/batch_num}")
+    if print_flag:
+        print(f"Test loss {loss.item()/batch_num}")
+        print(f"Bse Test loss {base_loss.item()/batch_num}")
     return loss.item()/batch_num
 
 

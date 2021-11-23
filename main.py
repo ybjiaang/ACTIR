@@ -21,7 +21,10 @@ import matplotlib.pyplot as plt
 
 from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious
 from models.adap_invar import AdaptiveInvariantNN
+from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
+from trainers.erm import ERM
+
 
 if __name__ == '__main__':
   torch.manual_seed(0)
@@ -36,7 +39,7 @@ if __name__ == '__main__':
   parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
   # different models
-  parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar')
+  parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
   parser.add_argument('--compare_all_invariant_models', type=bool, default=False, help='compare all invariant models')
 
   # dataset
@@ -93,6 +96,16 @@ if __name__ == '__main__':
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
 
+  if args.model_name == "erm" or args.compare_all_invariant_models:
+    model = BaseClass(input_dim, Phi).to(args.device)
+    trainer = ERM(model, criterion)
+    
+    print("training...")
+    trainer.train(train_dataset, args.batch_size)
+
+    print("test...")
+    trainer.test(test_dataset)
+
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda)
@@ -110,33 +123,31 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.savefig("comparision_before.png")
 
-    # Run Experiment
     print("training...")
-    # train
     trainer.train(train_dataset, args.batch_size)
 
     print("test...")
-    # test
     trainer.model.set_etas_to_zeros()
     trainer.test(test_dataset)
 
-    # Finetuning tests
-    # proj_gd_loss = 0.0
-    # gd_loss = 0.0
-    # for i in range(8):
-    #   x, y = test_finetune_dataset
+    if True:
+      # Finetuning tests
+      proj_gd_loss = 0.0
+      gd_loss = 0.0
+      for i in range(8):
+        x, y = test_finetune_dataset
 
-    #   partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
+        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
 
-    #   print("prjected gradient descent")
-    #   trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-    #   proj_gd_loss+=trainer.test(test_dataset)
+        # print("prjected gradient descent")
+        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+        proj_gd_loss+=trainer.test(test_dataset, print_flag=False)
 
-    #   print("regular gradient descent")
-    #   trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
-    #   gd_loss+=trainer.test(test_dataset)
+        # print("regular gradient descent")
+        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
+        gd_loss+=trainer.test(test_dataset, print_flag=False)
 
-    # print(proj_gd_loss/8, gd_loss/8)
+      print(proj_gd_loss/8, gd_loss/8)
 
 
     if args.print_base_graph: 

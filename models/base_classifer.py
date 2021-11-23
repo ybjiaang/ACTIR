@@ -4,10 +4,9 @@ from torch import nn
 import copy
 
 class BaseClass(nn.Module):
-  def __init__(self, n_batch_envs, input_dim, Phi):
+  def __init__(self, input_dim, Phi):
     super(BaseClass, self).__init__()
 
-    self.n_batch_envs = n_batch_envs
     self.input_dim = input_dim
     
     # Define \Phi
@@ -16,10 +15,12 @@ class BaseClass(nn.Module):
     self.phi_odim = self.Phi[-1].out_features
     
     # Define \beta
-    self.beta = torch.nn.Parameter(torch.zeros(self.phi_odim, 1))
-    self.beta[0,0] = 1.0
+    init_beta_numpy = np.zeros((self.phi_odim, 1))
+    init_beta_numpy[0,0] = 1.0
+    init_beta = torch.Tensor(init_beta_numpy)
+    self.beta = torch.nn.Parameter(init_beta)
 
-  def forward(self, x, env_ind):
+  def forward(self, x):
     rep = self.Phi(x)
 
     f_beta = rep @ self.beta
