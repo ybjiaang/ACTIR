@@ -24,12 +24,14 @@ from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
 from trainers.erm import ERM
+from trainers.irm import IRM
+from trainers.hsic import HSIC
 
 
 if __name__ == '__main__':
-  torch.manual_seed(0)
-  random.seed(0)
-  np.random.seed(0)
+  torch.manual_seed(2)
+  random.seed(2)
+  np.random.seed(2)
 
   parser = argparse.ArgumentParser()
 
@@ -49,7 +51,7 @@ if __name__ == '__main__':
 
   # misc
   parser.add_argument('--print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
-
+  parser.add_argument('--verbose', type=bool, default=False, help='verbose or not')
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -96,19 +98,39 @@ if __name__ == '__main__':
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
 
-  if args.model_name == "erm" or args.compare_all_invariant_models:
+  if args.model_name == "hsic" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
-    trainer = ERM(model, criterion)
+    trainer = HSIC(model, criterion, args)
     
-    print("training...")
+    print("hsic training...")
     trainer.train(train_dataset, args.batch_size)
 
-    print("test...")
+    print("hsic test...")
+    trainer.test(test_dataset)
+
+  if args.model_name == "irm" or args.compare_all_invariant_models:
+    model = BaseClass(input_dim, Phi).to(args.device)
+    trainer = IRM(model, criterion, args)
+    
+    print("irm training...")
+    trainer.train(train_dataset, args.batch_size)
+
+    print("irm test...")
+    trainer.test(test_dataset)
+
+  if args.model_name == "erm" or args.compare_all_invariant_models:
+    model = BaseClass(input_dim, Phi).to(args.device)
+    trainer = ERM(model, criterion, args)
+    
+    print("erm training...")
+    trainer.train(train_dataset, args.batch_size)
+
+    print("erm test...")
     trainer.test(test_dataset)
 
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
-    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda)
+    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:
       # check if the base classifer match before training
@@ -123,10 +145,10 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.savefig("comparision_before.png")
 
-    print("training...")
+    print("adp_invar training...")
     trainer.train(train_dataset, args.batch_size)
 
-    print("test...")
+    print("adp_invar test...")
     trainer.model.set_etas_to_zeros()
     trainer.test(test_dataset)
 

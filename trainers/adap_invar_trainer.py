@@ -4,11 +4,12 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify
+from misc import batchify, HSICLoss
 
 class AdaptiveInvariantNNTrainer():
-  def __init__(self, model, loss_fn, reg_lambda):
+  def __init__(self, model, loss_fn, reg_lambda, config):
     self.model = copy.deepcopy(model)
+    self.config = config
 
     # define loss
     self.criterion = loss_fn
@@ -26,14 +27,6 @@ class AdaptiveInvariantNNTrainer():
     # during test, use the first eta
     self.eta_test_ind = 0
     
-  def pairwise_distances(self, x):
-      #x should be two dimensional
-      instances_norm = torch.sum(x**2,-1).reshape((-1,1))
-      return -2*torch.mm(x,x.t()) + instances_norm + instances_norm.t()
-
-  def GaussianKernelMatrix(self, x, sigma=1):
-      pairwise_distances_ = self.pairwise_distances(x)
-      return torch.exp(-pairwise_distances_ /sigma)
 
   # Define training Loop
   def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
@@ -53,12 +46,8 @@ class AdaptiveInvariantNNTrainer():
           for x, y in batchify(train_dataset[env_ind], batch_size):
             batch_num += 1
             f_beta, f_eta, _ = self.model(x, env_ind)
-            # m = x.shape[0]
-            # K = self.GaussianKernelMatrix(x)
-            # L = self.GaussianKernelMatrix(y)
-            # H = torch.eye(m) - 1.0/m * torch.ones((m,m))
-            # HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
-            # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * HSIC
+            hsic_loss = HSICLoss(f_beta, f_eta)
+            # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
             loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
 
           self.inner_optimizer.zero_grad()
@@ -77,7 +66,7 @@ class AdaptiveInvariantNNTrainer():
       phi_loss.backward()
       self.outer_optimizer.step()
 
-      if t % 10 == 0:
+      if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 
   

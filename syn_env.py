@@ -28,10 +28,10 @@ class CausalAdditiveNoSpurious(Envs):
       self.w_x_z_perp = np.random.uniform(low = -5, high = 5, size=(d_x_z_perp, 1)) 
     
     #input_dim 
-    self.input_dim = self.d_x_z_perp + self.d_x_y_perp
+    self.input_dim = self.d_x_z_perp + self.d_x_y_perp + 1
 
     # self.env_means = [0.5, -1.0, 1.5, -2.0, -2.5, 3.0]
-    self.env_means = [0.5, 5.0, 10.0, 1.0, -1.0]
+    self.env_means = [0.2, 2, 1.0, 10.0]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
 
@@ -50,8 +50,8 @@ class CausalAdditiveNoSpurious(Envs):
     """
     x_z_perp = np.random.randn(n, self.d_x_z_perp)
     u = np.random.randn(n, self.d_u) + self.env_means[env_ind]
-    # if env_ind == self.num_total_envs + 1:
-    #   u = np.random.exponential(size=(n, self.d_u)) + self.env_means[env_ind]
+    if env_ind == self.num_total_envs + 1:
+      u = np.random.exponential(size=(n, self.d_u)) + self.env_means[env_ind]
 
     x_y_perp = self.phi_x_y_perp(u)
 
@@ -60,7 +60,9 @@ class CausalAdditiveNoSpurious(Envs):
 
     y = self.fn_y(x_z_perp, self.w_x_z_perp, u, w_u)
 
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
+    x_y = y * self.env_means[env_ind] + np.random.randn(n, 1) * 0.1
+
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp, x_y], axis=1)), torch.Tensor(y)
 
   def phi_base(self, x):
     return np.sin(np.pi * x)
@@ -74,7 +76,6 @@ class CausalAdditiveNoSpurious(Envs):
   
   def fn_y(self, x_z_perp, w_x_z_perp, u, w_u):
     n = x_z_perp.shape[0]
-    print(w_u)
     return self.phi_base(x_z_perp) @ w_x_z_perp + self.phi_u(u) @ w_u + np.random.randn(n, 1)*0.1
 
   def sample_base_classifer(self, x):
