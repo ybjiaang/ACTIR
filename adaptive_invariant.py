@@ -20,8 +20,8 @@ import argparse
 import matplotlib.pyplot as plt
 
 from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious
-from models.adap_invar import AdaptiveInvariantNN, AdaptiveInvariantNNTrainer
-
+from models.adap_invar import AdaptiveInvariantNN
+from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
 
 if __name__ == '__main__':
   torch.manual_seed(0)
@@ -33,15 +33,19 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 32, help='batch size')
   parser.add_argument('--reg_lambda', type=float, default= 0.5, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
+  # different models
+  parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar')
+  parser.add_argument('--compare_all_invariant_models', type=bool, default=False, help='compare all invariant models')
+
+  # dataset
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment')
-
   # synthetic dataset specifics
   parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
-  # parser.add_argument('--syn_dataset_test_size', type=int, default= 5, help='size of synthetic dataset per env')
 
   # misc
-  parser.add_argument('-print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
+  parser.add_argument('--print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
 
   args = parser.parse_args()
 
@@ -74,64 +78,72 @@ if __name__ == '__main__':
     x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
 
-  # model
-  input_dims = env.input_dim
-  model = AdaptiveInvariantNN(args.n_envs, input_dims).to(args.device)
+  # model of phi (used by all models)
+  input_dim = env.input_dim
+  phi_odim = args.phi_odim
+
+  Phi = nn.Sequential(
+            nn.Linear(input_dim, 8),
+            nn.ReLU(),
+            nn.Linear(8, 16),
+            nn.ReLU(),
+            nn.Linear(16, phi_odim)
+        )
 
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
 
-  trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda)
-  
-  # check if the base classifer match before training
-  sampe_n = 100
-  # x_base_test,y_base_test = env.sample_random_dataset(n = sampe_n)
-  x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
-  x_base_test_sorted = np.sort(x_base_test, axis=0)
+  if args.model_name == "adp_invar" or args.compare_all_invariant_models:
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
+    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda)
+    
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.savefig("comparision_before.png")
 
-  if args.print_base_graph:
-    y_base = env.sample_base_classifer(x_base_test_sorted)
-    with torch.no_grad(): 
-      y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-    plt.figure()
-    plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-    plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-    plt.savefig("comparision_before.png")
+    # Run Experiment
+    print("training...")
+    # train
+    trainer.train(train_dataset, args.batch_size)
 
-  # Run Experiment
-  print("training...")
-  # train
-  trainer.train(train_dataset, args.batch_size)
+    print("test...")
+    # test
+    trainer.model.set_etas_to_zeros()
+    trainer.test(test_dataset)
 
-  print("test...")
-  # test
+    # Finetuning tests
+    # proj_gd_loss = 0.0
+    # gd_loss = 0.0
+    # for i in range(8):
+    #   x, y = test_finetune_dataset
 
-  trainer.model.set_etas_to_zeros()
-  trainer.test(test_dataset)
+    #   partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
 
-  proj_gd_loss = 0.0
-  gd_loss = 0.0
-  for i in range(8):
-    x, y = test_finetune_dataset
+    #   print("prjected gradient descent")
+    #   trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+    #   proj_gd_loss+=trainer.test(test_dataset)
 
-    partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
+    #   print("regular gradient descent")
+    #   trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
+    #   gd_loss+=trainer.test(test_dataset)
 
-    print("prjected gradient descent")
-    trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-    proj_gd_loss+=trainer.test(test_dataset)
-
-    print("regular gradient descent")
-    trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
-    gd_loss+=trainer.test(test_dataset)
-
-  print(proj_gd_loss/8, gd_loss/8)
+    # print(proj_gd_loss/8, gd_loss/8)
 
 
-  if args.print_base_graph:
-    # check if the base classifer match after training
-    with torch.no_grad(): 
-      y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-    plt.figure()
-    plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-    plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-    plt.savefig("comparision_after.png")
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.savefig("comparision_after.png")
