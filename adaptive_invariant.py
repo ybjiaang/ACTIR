@@ -37,8 +37,8 @@ if __name__ == '__main__':
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment')
 
   # synthetic dataset specifics
-  parser.add_argument('--syn_dataset_train_size', type=int, default= 128, help='size of synthetic dataset per env')
-  parser.add_argument('--syn_dataset_test_size', type=int, default= 5, help='size of synthetic dataset per env')
+  parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
+  # parser.add_argument('--syn_dataset_test_size', type=int, default= 5, help='size of synthetic dataset per env')
 
   # misc
   parser.add_argument('-print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
@@ -65,7 +65,13 @@ if __name__ == '__main__':
     val_dataset = (x, y)
 
     # create test dataset
-    x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_test_size)
+    x, y = env.sample_envs(env.num_train_evns + 1, n = 10)
+    test_finetune_dataset = (x, y)
+
+    x, _ = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
+    test_unlabelled_dataset = (x,)
+
+    x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
 
   # model
@@ -79,13 +85,13 @@ if __name__ == '__main__':
   
   # check if the base classifer match before training
   sampe_n = 100
-  x_base_test,y_base_test = env.sample_random_dataset(n = sampe_n)
+  # x_base_test,y_base_test = env.sample_random_dataset(n = sampe_n)
+  x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
   x_base_test_sorted = np.sort(x_base_test, axis=0)
 
   y_base = env.sample_base_classifer(x_base_test_sorted)
   with torch.no_grad(): 
     y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-
 
   if args.print_base_graph:
     plt.figure()
@@ -100,7 +106,26 @@ if __name__ == '__main__':
 
   print("test...")
   # test
+
+  trainer.model.set_etas_to_zeros()
   trainer.test(test_dataset)
+
+  proj_gd_loss = 0.0
+  gd_loss = 0.0
+  for i in range(8):
+    x, y = test_finetune_dataset
+
+    partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
+
+    print("prjected gradient descent")
+    trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+    proj_gd_loss+=trainer.test(test_dataset)
+
+    print("regular gradient descent")
+    trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
+    gd_loss+=trainer.test(test_dataset)
+
+  print(proj_gd_loss/8, gd_loss/8)
 
   # check if the base classifer match after training
   with torch.no_grad(): 
