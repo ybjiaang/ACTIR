@@ -19,7 +19,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from syn_env import CausalAdditiveNoSpurious
+from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious
 from models.adap_invar import AdaptiveInvariantNN, AdaptiveInvariantNNTrainer
 
 
@@ -89,11 +89,10 @@ if __name__ == '__main__':
   x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
   x_base_test_sorted = np.sort(x_base_test, axis=0)
 
-  y_base = env.sample_base_classifer(x_base_test_sorted)
-  with torch.no_grad(): 
-    y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-
   if args.print_base_graph:
+    y_base = env.sample_base_classifer(x_base_test_sorted)
+    with torch.no_grad(): 
+      y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
     plt.figure()
     plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
     plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
@@ -127,11 +126,11 @@ if __name__ == '__main__':
 
   print(proj_gd_loss/8, gd_loss/8)
 
-  # check if the base classifer match after training
-  with torch.no_grad(): 
-    y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
 
   if args.print_base_graph:
+    # check if the base classifer match after training
+    with torch.no_grad(): 
+      y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
     plt.figure()
     plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
     plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")

@@ -122,20 +122,17 @@ class AdaptiveInvariantNNTrainer():
           for x, y in batchify(train_dataset[env_ind], batch_size):
             batch_num += 1
             f_beta, f_eta, _ = self.model(x, env_ind)
-            m = x.shape[0]
-            K = self.GaussianKernelMatrix(x)
-            L = self.GaussianKernelMatrix(y)
-            H = torch.eye(m) - 1.0/m * torch.ones((m,m))
-            HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
+            # m = x.shape[0]
+            # K = self.GaussianKernelMatrix(x)
+            # L = self.GaussianKernelMatrix(y)
+            # H = torch.eye(m) - 1.0/m * torch.ones((m,m))
+            # HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
             # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * HSIC
             loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
-            # reg_loss += torch.mean(torch.pow(f_beta * f_eta, 2))
 
           self.inner_optimizer.zero_grad()
           loss.backward()
           self.inner_optimizer.step()
-        # print(reg_loss.item()/batch_num)
-        # print(loss.item()/batch_num)
 
       # update phi
       self.model.freeze_all_but_phi()
