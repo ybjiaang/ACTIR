@@ -13,12 +13,13 @@ class Envs(object):
     pass
 
 class CausalAdditiveNoSpurious(Envs):
-  def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1, d_u = 1, guassian_normalized_weight = False):
+  def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1, d_u = 1, d_x_y = 1, guassian_normalized_weight = False):
     super(CausalAdditiveNoSpurious, self).__init__()
     # dimensions
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
     self.d_u = d_u
+    self.d_x_y = d_x_y
 
     # weight vectors
     if guassian_normalized_weight:
@@ -28,9 +29,8 @@ class CausalAdditiveNoSpurious(Envs):
       self.w_x_z_perp = np.random.uniform(low = -5, high = 5, size=(d_x_z_perp, 1)) 
     
     #input_dim 
-    self.input_dim = self.d_x_z_perp + self.d_x_y_perp + 1
+    self.input_dim = self.d_x_z_perp + self.d_x_y_perp + self.d_x_y
 
-    # self.env_means = [0.5, -1.0, 1.5, -2.0, -2.5, 3.0]
     self.env_means = [0.2, 2, 1.0, 10.0]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
@@ -60,9 +60,12 @@ class CausalAdditiveNoSpurious(Envs):
 
     y = self.fn_y(x_z_perp, self.w_x_z_perp, u, w_u)
 
-    x_y = y * self.env_means[env_ind] + np.random.randn(n, 1) * 0.1
+    if self.d_x_y != 0:
+      x_y = y * self.env_means[env_ind] + np.random.randn(n, 1) * 0.1
+      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp, x_y], axis=1)), torch.Tensor(y)
 
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp, x_y], axis=1)), torch.Tensor(y)
+    else:
+      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
 
   def phi_base(self, x):
     return np.sin(np.pi * x)

@@ -148,7 +148,7 @@ if __name__ == '__main__':
         partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
 
         model = trainer.finetune_test(partical_test_finetune_dataset)
-        finetuned_loss+=trainer.test(test_dataset, input_model = model)
+        finetuned_loss+=trainer.test(test_dataset, input_model = model, print_flag=False)
 
       print(finetuned_loss/8)
 

@@ -66,7 +66,7 @@ class LinearMAML():
         print(loss.item())
 
   
-  def test(self, test_dataset, batch_size = 32, input_model = None):
+  def test(self, test_dataset, batch_size = 32, input_model = None, print_flag = True):
     
     fast_weights = None
     test_model = self.model
@@ -83,7 +83,8 @@ class LinearMAML():
       loss += self.criterion(f_beta, y) 
       batch_num += 1
       
-    print(f"Bse Test loss {loss.item()/batch_num}")
+    if print_flag:
+      print(f"Bse Test loss {loss.item()/batch_num}") 
     
     return loss.item()/batch_num
 
