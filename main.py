@@ -26,6 +26,7 @@ from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
 from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
+from trainers.maml import LinearMAML
 
 
 if __name__ == '__main__':
@@ -50,8 +51,8 @@ if __name__ == '__main__':
   parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
 
   # misc
-  parser.add_argument('--print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
-  parser.add_argument('--verbose', type=bool, default=False, help='verbose or not')
+  parser.add_argument('-print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
+  parser.add_argument('-verbose', type=bool, default=False, help='verbose or not')
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -127,6 +128,29 @@ if __name__ == '__main__':
 
     print("erm test...")
     trainer.test(test_dataset)
+
+  if args.model_name == "maml" or args.compare_all_invariant_models:
+    model = BaseClass(input_dim, Phi).to(args.device)
+    trainer = LinearMAML(model, criterion, args)
+
+    print("maml training...")
+    trainer.train(train_dataset, args.batch_size)
+
+    print("maml test...")
+    trainer.test(test_dataset)
+
+    if True:
+      # Finetuning tests
+      finetuned_loss = 0.0
+      for i in range(8):
+        x, y = test_finetune_dataset
+
+        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
+
+        model = trainer.finetune_test(partical_test_finetune_dataset)
+        finetuned_loss+=trainer.test(test_dataset, input_model = model)
+
+      print(finetuned_loss/8)
 
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)

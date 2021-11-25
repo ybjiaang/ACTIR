@@ -41,7 +41,7 @@ class ERM():
 
   
   def test(self, test_dataset, batch_size = 32):
-    # print(self.model.etas[0])
+    
     self.model.eval()
     loss = 0
     batch_num = 0

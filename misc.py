@@ -17,6 +17,36 @@ def batchify(dataset, batch_size):
   return creatDataSet()
 
 
+def maml_batchify(dataset, batch_size):
+  n_envs = len(dataset)
+  all_lens = np.zeros(n_envs)
+  for i, dataset_per_env in enumerate(dataset):
+    all_lens[i] = dataset_per_env[0].shape[0]
+
+  total_length_min = np.min(all_lens)
+  nloops = np.ceil(total_length_min/batch_size).astype(int)
+
+  def creatDataSet():
+    for i in range(nloops):
+      start = i*batch_size
+      train_sqt_set = []
+      train_qrt_set = []
+
+      for env_ind in range(n_envs):
+        x, y = dataset[env_ind]
+        if (start + batch_size) >= all_lens[env_ind]:
+          # assume we have at least two elements, otherwise, python would throw the index error
+          train_sqt_set.append((x[start::2], y[start::2]))
+          train_qrt_set.append((x[start+1::2], y[start+1::2]))
+
+        else:
+          train_sqt_set.append((x[start : start + batch_size//2], y[start : start + batch_size//2]))
+          train_qrt_set.append((x[start + batch_size//2 : start + batch_size], y[start + batch_size//2 : start + batch_size]))
+
+      yield train_sqt_set, train_qrt_set
+      
+  return creatDataSet()
+
 def pairwise_distances(x):
     #x should be two dimensional
     instances_norm = torch.sum(x**2,-1).reshape((-1,1))
