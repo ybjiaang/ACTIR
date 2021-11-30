@@ -19,7 +19,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious
+from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious, AntiCausal
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -47,6 +47,7 @@ if __name__ == '__main__':
 
   # dataset
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment')
+  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
   # synthetic dataset specifics
   parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
 
@@ -61,7 +62,13 @@ if __name__ == '__main__':
 
   # create datasets
   if args.dataset == "syn":
-    env = CausalAdditiveNoSpurious()
+    if args.causal_dir_syn == "causal":
+      print("Sampling from causal synthetic datasets")
+      env = CausalAdditiveNoSpurious()
+    if args.causal_dir_syn == "anti":
+      print("Sampling from causal anti datasets")
+      env = AntiCausal()
+
     args.n_envs = env.num_train_evns
 
     # create training data
@@ -149,6 +156,30 @@ if __name__ == '__main__':
 
         model = trainer.finetune_test(partical_test_finetune_dataset)
         finetuned_loss+=trainer.test(test_dataset, input_model = model, print_flag=False)
+
+      print(finetuned_loss/8)
+
+  if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
+    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
+
+    print("adp_invar anti-causal training...")
+    trainer.train(train_dataset, args.batch_size)
+
+    print("adp_invar anti-causal test...")
+    trainer.model.set_etas_to_zeros()
+    trainer.test(test_dataset)
+
+    if True:
+      # Finetuning tests
+      finetuned_loss = 0.0
+      for i in range(8):
+        x, y = test_finetune_dataset
+
+        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
+
+        model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+        finetuned_loss+=trainer.test(test_dataset, print_flag=False)
 
       print(finetuned_loss/8)
 

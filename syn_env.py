@@ -112,3 +112,25 @@ class CausalHiddenAdditiveNoSpurious(CausalAdditiveNoSpurious):
 
   def sample_base_classifer(self, x):
     raise Exception("This does not work")
+
+
+class AntiCausal(CausalAdditiveNoSpurious):
+  def __init__(self, d_y = 1, d_u_perp = 1, d_x_y_u = 1):
+    super(AntiCausal, self).__init__()
+    self.d_y = d_y
+    self.d_u_perp = d_u_perp
+    self.d_x_y_u = d_x_y_u
+
+    self.input_dim = self.d_u_perp + self.d_x_y_u
+
+  def sample_envs(self, env_ind, n = 100):
+    y = np.random.randn(n, self.d_y)
+
+    x_u_perp = self.phi_base(y) + np.random.randn(n, 1)*0.1
+
+    x_y_u = self.phi_x_y_perp(y) * self.env_means[env_ind] + x_u_perp + np.random.randn(n, 1)*0.1
+
+    return torch.Tensor(np.concatenate([x_u_perp, x_y_u], axis=1)), torch.Tensor(y)
+
+  def sample_base_classifer(self, x):
+    raise Exception("This does not work")

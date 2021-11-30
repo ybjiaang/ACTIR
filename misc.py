@@ -57,12 +57,31 @@ def GaussianKernelMatrix(x, sigma=1):
     return torch.exp(-pairwise_distances_ /sigma)
 
 
-def HSICLoss(x, y, s_x=1, s_y=1, cuda=False):
+def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
     m,_ = x.shape #batch size
     K = GaussianKernelMatrix(x,s_x)
     L = GaussianKernelMatrix(y,s_y)
     H = torch.eye(m) - 1.0/m * torch.ones((m,m))
     if cuda:
       H = H.double().cuda() 
-    HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
-    return HSIC
+    if return_matrix:
+      return torch.mm(L,torch.mm(H,torch.mm(K,H)))
+    else:
+      HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
+      return HSIC
+
+def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, cuda=False):
+  m,_ = x.shape #batch size
+  assert(s_z == 1)
+  x_dd = torch.cat((x, z), dim=1)
+  
+  Simga_xdd_y = HSICLoss(x_dd, y, s_x + s_z, s_y, return_matrix = True)
+  Sigma_xdd_z = HSICLoss(x_dd, z, s_x + s_z, s_z, return_matrix = True)
+  Sigma_z_z = HSICLoss(z, z, s_z, s_z, return_matrix = True)
+  Sigma_z_y = HSICLoss(z, y, s_z, s_y, return_matrix = True)
+
+  HSIC = torch.trace(Simga_xdd_y - Sigma_xdd_z @ Sigma_z_y / (Sigma_z_z + 1e-5))/((m-1)**2)
+
+  return HSIC
+
+  

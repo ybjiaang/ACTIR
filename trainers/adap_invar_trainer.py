@@ -4,12 +4,13 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify, HSICLoss
+from misc import batchify, HSICLoss, ConditionalHSICLoss
 
 class AdaptiveInvariantNNTrainer():
-  def __init__(self, model, loss_fn, reg_lambda, config):
+  def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
     self.model = copy.deepcopy(model)
     self.config = config
+    self.causal_dir = causal_dir
 
     # define loss
     self.criterion = loss_fn
@@ -41,14 +42,20 @@ class AdaptiveInvariantNNTrainer():
       for env_ind in range(n_train_envs):
         for _ in range(n_inner_loop):
           loss = 0
-          reg_loss = 0
           batch_num = 0
           for x, y in batchify(train_dataset[env_ind], batch_size):
             batch_num += 1
             f_beta, f_eta, _ = self.model(x, env_ind)
-            hsic_loss = HSICLoss(f_beta, f_eta)
-            # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-            loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+            if self.causal_dir:
+              hsic_loss = HSICLoss(f_beta, f_eta)
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+            else:
+              reg_loss = torch.mean(f_beta * f_eta) - torch.mean(f_beta * y) * torch.mean(y * f_eta) / (torch.mean(y * y) + 1e-5)
+              hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss, 2)
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+
 
           self.inner_optimizer.zero_grad()
           loss.backward()
@@ -93,26 +100,27 @@ class AdaptiveInvariantNNTrainer():
     self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
     self.model.set_etas_to_zeros()
 
-    M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)
+    if self.causal_dir:
+      M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)
 
-    # Estimate covariance matrix
-    if test_unlabeld_dataset == None:
-      for i in range(test_finetune_dataset[0].shape[0]):
-        x = test_finetune_dataset[0][i]
-        self.model.eval()
-        _, _, rep = self.model(x, self.eta_test_ind)
-        M += torch.outer(rep, rep)
-      
-      M /= test_finetune_dataset[0].shape[0]
+      # Estimate covariance matrix
+      if test_unlabeld_dataset == None:
+        for i in range(test_finetune_dataset[0].shape[0]):
+          x = test_finetune_dataset[0][i]
+          self.model.eval()
+          _, _, rep = self.model(x, self.eta_test_ind)
+          M += torch.outer(rep, rep)
+        
+        M /= test_finetune_dataset[0].shape[0]
 
-    else:
-      for i in range(test_unlabeld_dataset[0].shape[0]):
-        x = test_unlabeld_dataset[0][i]
-        self.model.eval()
-        _, _, rep = self.model(x, self.eta_test_ind)
-        M += torch.outer(rep, rep)
-      
-      M /= test_unlabeld_dataset[0].shape[0]
+      else:
+        for i in range(test_unlabeld_dataset[0].shape[0]):
+          x = test_unlabeld_dataset[0][i]
+          self.model.eval()
+          _, _, rep = self.model(x, self.eta_test_ind)
+          M += torch.outer(rep, rep)
+        
+        M /= test_unlabeld_dataset[0].shape[0]
 
     self.model.train()
     self.model.freeze_all_but_etas()
@@ -131,14 +139,15 @@ class AdaptiveInvariantNNTrainer():
       loss.backward()
       self.test_inner_optimizer.step()
 
-      """ projected gradient descent """
-      if projected_gd:
-        with torch.no_grad():
-          v = M @ self.model.beta 
-          norm = v.T @ v
-          alpha = self.model.etas[0].T @ v
-          self.model.etas[0].sub_(alpha * v/norm)
-      # print(self.model.etas[0].T @ M @ self.model.beta )
+      if self.causal_dir:
+        """ projected gradient descent """
+        if projected_gd:
+          with torch.no_grad():
+            v = M @ self.model.beta 
+            norm = v.T @ v
+            alpha = self.model.etas[0].T @ v
+            self.model.etas[0].sub_(alpha * v/norm)
+        # print(self.model.etas[0].T @ M @ self.model.beta )
 
       # if i % 10 == 0:
       #     print(loss.item()/batch_num) 
