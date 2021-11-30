@@ -59,6 +59,12 @@ class AdaptiveInvariantNN(nn.Module):
     
     self.beta.requires_grad = False
 
+  def freeze_all_but_beta(self):
+    for para in self.parameters():
+      para.requires_grad = True
+    
+    self.beta.requires_grad = False
+
   def freeze_all(self):
     for para in self.parameters():
       para.requires_grad = False

@@ -129,6 +129,8 @@ class AntiCausal(CausalAdditiveNoSpurious):
     x_u_perp = self.phi_base(y) + np.random.randn(n, 1)*0.1
 
     x_y_u = self.phi_x_y_perp(y) * self.env_means[env_ind] + x_u_perp + np.random.randn(n, 1)*0.1
+    # if env_ind == self.num_total_envs + 1:
+    #    x_y_u = self.phi_u(y) + x_u_perp + np.random.randn(n, 1)*0.1
 
     return torch.Tensor(np.concatenate([x_u_perp, x_y_u], axis=1)), torch.Tensor(y)
 

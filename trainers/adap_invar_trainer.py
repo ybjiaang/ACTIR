@@ -20,8 +20,9 @@ class AdaptiveInvariantNNTrainer():
     self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
 
-    self.model.freeze_all_but_phi()
-    self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-2)
+    # self.model.freeze_all_but_phi()
+    self.model.freeze_all_but_beta()
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
 
@@ -62,7 +63,8 @@ class AdaptiveInvariantNNTrainer():
           self.inner_optimizer.step()
 
       # update phi
-      self.model.freeze_all_but_phi()
+      # self.model.freeze_all_but_phi()
+      self.model.freeze_all_but_beta()
       phi_loss = 0
       for env_ind in range(n_train_envs):
         for x, y in batchify(train_dataset[env_ind], batch_size):
@@ -91,8 +93,8 @@ class AdaptiveInvariantNNTrainer():
       batch_num += 1
 
     if print_flag:
-        print(f"Test loss {loss.item()/batch_num}")
         print(f"Bse Test loss {base_loss.item()/batch_num}")
+        print(f"Test loss {loss.item()/batch_num}")
     return loss.item()/batch_num
 
 

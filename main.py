@@ -167,7 +167,6 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar anti-causal test...")
-    trainer.model.set_etas_to_zeros()
     trainer.test(test_dataset)
 
     if True:
@@ -204,7 +203,6 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar test...")
-    trainer.model.set_etas_to_zeros()
     trainer.test(test_dataset)
 
     if True:
