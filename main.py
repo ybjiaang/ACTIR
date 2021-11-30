@@ -30,9 +30,9 @@ from trainers.maml import LinearMAML
 
 
 if __name__ == '__main__':
-  torch.manual_seed(2)
-  random.seed(2)
-  np.random.seed(2)
+  torch.manual_seed(0)
+  random.seed(0)
+  np.random.seed(0)
 
   parser = argparse.ArgumentParser()
 
