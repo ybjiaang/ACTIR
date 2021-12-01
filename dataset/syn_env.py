@@ -9,7 +9,7 @@ class Envs(object):
   def __init__(self):
     pass
   
-  def sample_dataset(self):
+  def sample_envs(self):
     pass
 
 class CausalAdditiveNoSpurious(Envs):

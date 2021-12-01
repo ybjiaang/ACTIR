@@ -17,12 +17,13 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
-    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
+    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
-    # self.model.freeze_all_but_phi()
-    self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
+    self.model.freeze_all_but_phi()
+    # self.model.freeze_all_but_beta()
+    # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
 
@@ -31,7 +32,7 @@ class AdaptiveInvariantNNTrainer():
     
 
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 10):
     n_train_envs = len(train_dataset)
 
     self.model.train()
@@ -63,8 +64,8 @@ class AdaptiveInvariantNNTrainer():
           self.inner_optimizer.step()
 
       # update phi
-      # self.model.freeze_all_but_phi()
-      self.model.freeze_all_but_beta()
+      self.model.freeze_all_but_phi()
+      # self.model.freeze_all_but_beta()
       phi_loss = 0
       for env_ind in range(n_train_envs):
         for x, y in batchify(train_dataset[env_ind], batch_size):

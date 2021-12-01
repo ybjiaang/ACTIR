@@ -20,6 +20,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 from dataset.syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious, AntiCausal
+from dataset.bike_env import BikeSharingDataset
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -39,21 +40,21 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 32, help='batch size')
   parser.add_argument('--reg_lambda', type=float, default= 0.5, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
+  parser.add_argument('--phi_odim',  type=int, default= 2, help='Phi output size')
 
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
-  parser.add_argument('--compare_all_invariant_models', type=bool, default=False, help='compare all invariant models')
+  parser.add_argument('--compare_all_invariant_models', action='store_true', help='compare all invariant models')
 
   # dataset
-  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment')
+  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike')
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
   # synthetic dataset specifics
   parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
 
   # misc
-  parser.add_argument('-print_base_graph', type=bool, default=False, help='whether to print base classifer comparision graph, can only be used in 1 dimension')
-  parser.add_argument('-verbose', type=bool, default=False, help='verbose or not')
+  parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
+  parser.add_argument('--verbose', action='store_true', help='verbose or not')
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -91,20 +92,53 @@ if __name__ == '__main__':
     x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
 
-  # model of phi (used by all models)
-  input_dim = env.input_dim
-  phi_odim = args.phi_odim
+    # model of phi (used by all models)
+    input_dim = env.input_dim
+    phi_odim = args.phi_odim
 
-  Phi = nn.Sequential(
-            nn.Linear(input_dim, 8),
+    Phi = nn.Sequential(
+              nn.Linear(input_dim, 8),
+              nn.ReLU(),
+              nn.Linear(8, 16),
+              nn.ReLU(),
+              nn.Linear(16, phi_odim)
+          )
+
+  if args.dataset == "bike":
+    print("bikesharing dataset")
+    env = BikeSharingDataset()
+
+    args.n_envs = env.num_train_evns
+
+    # create training data
+    train_dataset = []
+    for i in range(env.num_train_evns):
+      x, y = env.sample_envs(env_ind=i, train_val_test=0)
+      train_dataset.append((x,y))
+
+    # create val dataset
+    x, y = env.sample_envs(train_val_test=1)
+    val_dataset = (x, y)
+
+    # create test dataset
+    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+
+    input_dim = env.input_dim
+    phi_odim = args.phi_odim
+    Phi = nn.Sequential(
+            nn.Linear(input_dim, 4),
             nn.ReLU(),
-            nn.Linear(8, 16),
-            nn.ReLU(),
-            nn.Linear(16, phi_odim)
+            nn.Linear(4, phi_odim)
         )
+
+    # Phi = nn.Sequential(
+    #         nn.Linear(input_dim, phi_odim),
+    #     )
 
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
+
+  print(args.compare_all_invariant_models)
 
   if args.model_name == "hsic" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -159,7 +193,8 @@ if __name__ == '__main__':
 
       print(finetuned_loss/8)
 
-  if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
+  # if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
+  if False:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
