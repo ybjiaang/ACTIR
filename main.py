@@ -19,7 +19,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious, AntiCausal
+from dataset.syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious, AntiCausal
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
