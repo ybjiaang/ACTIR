@@ -23,28 +23,29 @@ class BikeSharingDataset(object):
         self.input_dim = self.test_data[0].shape[1]
 
     def read_files(self):
-        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'temp', 'atemp', 'hum', 'windspeed', 'cnt'])
+        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'holiday', 'weekday', 'workingday', 'temp', 'casual'])
         data_array = data.to_numpy()
         self.train_data_by_season = []
         self.val_data_by_season = []
 
-        for i in range(4):
+        for i in np.random.permutation(4):
             season_data = data_array[data_array[:,0] == i + 1, 1:]
             season_data = season_data[season_data[:,0] == self.year, 1:]
             total_num = season_data.shape[0]
             season_data_permutated = torch.Tensor(season_data[np.random.permutation(total_num)])
+            season_data_permutated[:, -1] /= 100
             if i == self.test_season:
-                self.test_data_finetune = (season_data_permutated[:self.test_finetune_size, :-1], season_data_permutated[:self.test_finetune_size, -2:-1])
+                self.test_data_finetune = (season_data_permutated[:self.test_finetune_size, :-1], season_data_permutated[:self.test_finetune_size, [-1]])
                 self.test_data_unlabled = (season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, :-1], 
-                    season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, -2:-1])
+                    season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, [-1]])
                 self.test_data = (season_data_permutated[: self.test_finetune_size + self.test_unlabled_size, :-1], 
-                    season_data_permutated[: self.test_finetune_size + self.test_unlabled_size, -2:-1])
+                    season_data_permutated[: self.test_finetune_size + self.test_unlabled_size, [-1]])
             else:
                 train_num = int(total_num * 0.8)
                 train_x = season_data_permutated[:train_num, :-1]
-                train_y = season_data_permutated[:train_num, -2:-1]
+                train_y = season_data_permutated[:train_num, [-1]]
                 val_x = season_data_permutated[train_num:, :-1]
-                val_y = season_data_permutated[train_num:, -2:-1]
+                val_y = season_data_permutated[train_num:, [-1]]
                 self.train_data_by_season.append((train_x, train_y))
                 self.val_data_by_season.append((val_x, val_y))
 

@@ -16,6 +16,7 @@ from tqdm import tqdm
 import random
 import argparse
 # %matplotlib inline
+import csv
 
 import matplotlib.pyplot as plt
 
@@ -31,16 +32,16 @@ from trainers.maml import LinearMAML
 
 
 if __name__ == '__main__':
-  torch.manual_seed(0)
-  random.seed(0)
-  np.random.seed(0)
+  # torch.manual_seed(0)
+  # random.seed(0)
+  # np.random.seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
-  parser.add_argument('--batch_size', type=int, default= 32, help='batch size')
-  parser.add_argument('--reg_lambda', type=float, default= 0.5, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--phi_odim',  type=int, default= 2, help='Phi output size')
+  parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
+  parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
@@ -51,10 +52,14 @@ if __name__ == '__main__':
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
   # synthetic dataset specifics
   parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
+  # bike sharing specifics
+  parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
+  parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
   # misc
   parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
   parser.add_argument('--verbose', action='store_true', help='verbose or not')
+  parser.add_argument('--cvs_dir', type=str, default= "./test.cvs", help='path to the cvs file')
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -97,16 +102,14 @@ if __name__ == '__main__':
     phi_odim = args.phi_odim
 
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 8),
+              nn.Linear(input_dim, 32),
               nn.ReLU(),
-              nn.Linear(8, 16),
-              nn.ReLU(),
-              nn.Linear(16, phi_odim)
+              nn.Linear(32, phi_odim)
           )
 
   if args.dataset == "bike":
     print("bikesharing dataset")
-    env = BikeSharingDataset()
+    env = BikeSharingDataset(test_season=args.bike_test_season, year=args.bike_year)
 
     args.n_envs = env.num_train_evns
 
@@ -124,21 +127,17 @@ if __name__ == '__main__':
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
     input_dim = env.input_dim
-    phi_odim = args.phi_odim
+    phi_odim = args.phi_odim 
     Phi = nn.Sequential(
-            nn.Linear(input_dim, 4),
-            nn.ReLU(),
-            nn.Linear(4, phi_odim)
-        )
-
-    # Phi = nn.Sequential(
-    #         nn.Linear(input_dim, phi_odim),
-    #     )
+              nn.Linear(input_dim, 8),
+              nn.ReLU(),
+              nn.Linear(8, 16),
+              nn.ReLU(),
+              nn.Linear(16, phi_odim)
+          )
 
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
-
-  print(args.compare_all_invariant_models)
 
   if args.model_name == "hsic" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -148,7 +147,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("hsic test...")
-    trainer.test(test_dataset)
+    hsic_loss = trainer.test(test_dataset)
 
   if args.model_name == "irm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -158,7 +157,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("irm test...")
-    trainer.test(test_dataset)
+    irm_loss = trainer.test(test_dataset)
 
   if args.model_name == "erm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -168,7 +167,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("erm test...")
-    trainer.test(test_dataset)
+    erm_loss = trainer.test(test_dataset)
 
   if args.model_name == "maml" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -178,7 +177,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("maml test...")
-    trainer.test(test_dataset)
+    maml_loss = trainer.test(test_dataset)
 
     if True:
       # Finetuning tests
@@ -193,8 +192,7 @@ if __name__ == '__main__':
 
       print(finetuned_loss/8)
 
-  # if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
-  if False:
+  if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
@@ -202,7 +200,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar anti-causal test...")
-    trainer.test(test_dataset)
+    adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
     if True:
       # Finetuning tests
@@ -213,7 +211,8 @@ if __name__ == '__main__':
         partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
 
         model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-        finetuned_loss+=trainer.test(test_dataset, print_flag=False)
+        _, fine_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+        finetuned_loss+=fine_loss_this_epoch
 
       print(finetuned_loss/8)
 
@@ -238,7 +237,7 @@ if __name__ == '__main__':
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar test...")
-    trainer.test(test_dataset)
+    adp_invar_base_loss, _ = trainer.test(test_dataset)
 
     if True:
       # Finetuning tests
@@ -251,11 +250,13 @@ if __name__ == '__main__':
 
         # print("prjected gradient descent")
         trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-        proj_gd_loss+=trainer.test(test_dataset, print_flag=False)
+        _, proj_gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+        proj_gd_loss+=proj_gd_loss_this_epoch
 
         # print("regular gradient descent")
         trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
-        gd_loss+=trainer.test(test_dataset, print_flag=False)
+        _, gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+        gd_loss+=gd_loss_this_epoch
 
       print(proj_gd_loss/8, gd_loss/8)
 
@@ -268,3 +269,9 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.savefig("comparision_after.png")
+
+  if args.compare_all_invariant_models:
+    with open(args.cvs_dir, 'a', newline='') as file: 
+      writer = csv.writer(file)
+      writer.writerow([hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss])
+    print(hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss)

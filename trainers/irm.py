@@ -8,7 +8,7 @@ from torch.autograd import grad
 from misc import batchify
 
 class IRM():
-  def __init__(self, model, loss_fn, config, reg_lambda=1e-5):
+  def __init__(self, model, loss_fn, config, reg_lambda=0.1):
     self.model = copy.deepcopy(model)
     self.config = config
 
