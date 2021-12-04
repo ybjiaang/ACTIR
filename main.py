@@ -32,9 +32,9 @@ from trainers.maml import LinearMAML
 
 
 if __name__ == '__main__':
-  torch.manual_seed(0)
-  random.seed(0)
-  np.random.seed(0)
+  # torch.manual_seed(0)
+  # random.seed(0)
+  # np.random.seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -102,9 +102,11 @@ if __name__ == '__main__':
     phi_odim = args.phi_odim
 
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 32),
+              nn.Linear(input_dim, 8),
               nn.ReLU(),
-              nn.Linear(32, phi_odim)
+              nn.Linear(8, 16),
+              nn.ReLU(),
+              nn.Linear(16, phi_odim)
           )
 
   if args.dataset == "bike":
@@ -147,6 +149,8 @@ if __name__ == '__main__':
       # check if the base classifer match before training
       sampe_n = 100
       x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
       x_base_test_sorted = np.sort(x_base_test, axis=0)
       y_base = env.sample_base_classifer(x_base_test_sorted)
       with torch.no_grad(): 
@@ -189,11 +193,39 @@ if __name__ == '__main__':
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = ERM(model, criterion, args)
     
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("erm_comparision_before.png")
+
     print("erm training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("erm test...")
     erm_loss = trainer.test(test_dataset)
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("erm_comparision_after.png")
 
   if args.model_name == "maml" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -250,6 +282,8 @@ if __name__ == '__main__':
       # check if the base classifer match before training
       sampe_n = 100
       x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
       x_base_test_sorted = np.sort(x_base_test, axis=0)
       y_base = env.sample_base_classifer(x_base_test_sorted)
       with torch.no_grad(): 
