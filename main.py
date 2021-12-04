@@ -160,7 +160,7 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.legend()
-      plt.savefig("hsci_comparision_before.png")
+      plt.savefig("png_folder/hsci_comparision_before.png")
 
     print("hsic training...")
     trainer.train(train_dataset, args.batch_size)
@@ -177,17 +177,45 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.legend()
-      plt.savefig("hsic_comparision_after.png")
+      plt.savefig("png_folder/hsic_comparision_after.png")
 
   if args.model_name == "irm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = IRM(model, criterion, args)
+
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/irm_comparision_before.png")
     
     print("irm training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("irm test...")
     irm_loss = trainer.test(test_dataset)
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/irm_comparision_after.png")
 
   if args.model_name == "erm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -208,7 +236,7 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.legend()
-      plt.savefig("erm_comparision_before.png")
+      plt.savefig("png_folder/erm_comparision_before.png")
 
     print("erm training...")
     trainer.train(train_dataset, args.batch_size)
@@ -225,17 +253,45 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.legend()
-      plt.savefig("erm_comparision_after.png")
+      plt.savefig("png_folder/erm_comparision_after.png")
 
   if args.model_name == "maml" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = LinearMAML(model, criterion, args)
+
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/maml_comparision_before.png")
 
     print("maml training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("maml test...")
     maml_loss = trainer.test(test_dataset)
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/maml_comparision_after.png")
 
     if True:
       # Finetuning tests
@@ -254,11 +310,40 @@ if __name__ == '__main__':
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      ind = np.argsort(x_base_test[:,0], axis=0)
+      y_base_test = y_base_test[ind]
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/adp_invar_anti_causal_comparision_before.png")
+
     print("adp_invar anti-causal training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
+
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if True:
       # Finetuning tests
@@ -293,13 +378,24 @@ if __name__ == '__main__':
       plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
       plt.legend()
-      plt.savefig("comparision_before.png")
+      plt.savefig("png_folder/adp_invar_comparision_before.png")
 
     print("adp_invar training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("adp_invar test...")
     adp_invar_base_loss, _ = trainer.test(test_dataset)
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("png_folder/adp_invar_comparision_after.png")
 
     if True:
       # Finetuning tests
@@ -322,17 +418,6 @@ if __name__ == '__main__':
 
       print(proj_gd_loss/8, gd_loss/8)
 
-
-    if args.print_base_graph: 
-      # check if the base classifer match after training
-      with torch.no_grad(): 
-        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-      plt.figure()
-      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
-      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-      plt.legend()
-      plt.savefig("comparision_after.png")
 
   if args.compare_all_invariant_models:
     with open(args.cvs_dir, 'a', newline='') as file: 

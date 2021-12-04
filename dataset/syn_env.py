@@ -43,6 +43,7 @@ class CausalAdditiveNoSpurious(Envs):
         self.w_u_all[i,:,:] = self.w_u_all[i,:,:]/np.linalg.norm(self.w_u_all[i,:,:], axis=0)
       else:
         self.w_u_all[i,:,:] = np.random.uniform(low = -3, high = 3, size=(self.d_u, 1))
+    # print(self.w_x_z_perp, self.w_u_all[i,:,:])
   
   def sample_envs(self, env_ind, n = 100):
     """ 
