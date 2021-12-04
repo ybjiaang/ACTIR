@@ -20,7 +20,7 @@ import csv
 
 import matplotlib.pyplot as plt
 
-from dataset.syn_env import CausalAdditiveNoSpurious, CausalHiddenAdditiveNoSpurious, AntiCausal
+from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal
 from dataset.bike_env import BikeSharingDataset
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
@@ -32,15 +32,15 @@ from trainers.maml import LinearMAML
 
 
 if __name__ == '__main__':
-  # torch.manual_seed(0)
-  # random.seed(0)
-  # np.random.seed(0)
+  torch.manual_seed(0)
+  random.seed(0)
+  np.random.seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 0.5, help='regularization coeff for adaptive invariant learning')
   parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
   # different models
@@ -143,11 +143,37 @@ if __name__ == '__main__':
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = HSIC(model, criterion, args)
     
+    if args.print_base_graph:
+      # check if the base classifer match before training
+      sampe_n = 100
+      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
+      x_base_test_sorted = np.sort(x_base_test, axis=0)
+      y_base = env.sample_base_classifer(x_base_test_sorted)
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("hsci_comparision_before.png")
+
     print("hsic training...")
     trainer.train(train_dataset, args.batch_size)
 
     print("hsic test...")
     hsic_loss = trainer.test(test_dataset)
+
+    if args.print_base_graph: 
+      # check if the base classifer match after training
+      with torch.no_grad(): 
+        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
+      plt.figure()
+      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
+      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
+      plt.savefig("hsic_comparision_after.png")
 
   if args.model_name == "irm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -230,7 +256,9 @@ if __name__ == '__main__':
         y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
       plt.figure()
       plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
       plt.savefig("comparision_before.png")
 
     print("adp_invar training...")
@@ -267,7 +295,9 @@ if __name__ == '__main__':
         y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
       plt.figure()
       plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
+      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
       plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
+      plt.legend()
       plt.savefig("comparision_after.png")
 
   if args.compare_all_invariant_models:

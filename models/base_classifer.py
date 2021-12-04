@@ -29,3 +29,7 @@ class BaseClass(nn.Module):
       f_beta = rep @ fast_beta[0]
 
     return f_beta, rep
+
+  def sample_base_classifer(self, x):
+    x_tensor = torch.Tensor(x)
+    return self.Phi(x_tensor) @ self.beta

@@ -21,8 +21,6 @@ class AdaptiveInvariantNNTrainer():
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_phi()
-    # self.model.freeze_all_but_beta()
-    # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
     self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
@@ -50,14 +48,17 @@ class AdaptiveInvariantNNTrainer():
             f_beta, f_eta, _ = self.model(x, env_ind)
             if self.causal_dir:
               hsic_loss = HSICLoss(f_beta, f_eta)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
             else:
-              reg_loss = torch.mean(f_beta * f_eta) - torch.mean(f_beta * y) * torch.mean(y * f_eta) / (torch.mean(y * y) + 1e-5)
-              hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss, 2)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              f_concat = torch.concat([f_beta, f_eta], axis=1)
+              f_size = f_concat.shape[0]
+              reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
 
+              # hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+            # print(loss.item())
 
           self.inner_optimizer.zero_grad()
           loss.backward()
@@ -65,7 +66,6 @@ class AdaptiveInvariantNNTrainer():
 
       # update phi
       self.model.freeze_all_but_phi()
-      # self.model.freeze_all_but_beta()
       phi_loss = 0
       for env_ind in range(n_train_envs):
         for x, y in batchify(train_dataset[env_ind], batch_size):
@@ -99,7 +99,7 @@ class AdaptiveInvariantNNTrainer():
     return base_loss.item()/batch_num, loss.item()/batch_num
 
 
-  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 100, projected_gd = True):
+  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = True):
     self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
     self.model.set_etas_to_zeros()
 
