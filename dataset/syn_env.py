@@ -12,6 +12,31 @@ class Envs(object):
   def sample_envs(self):
     pass
 
+# [[2.573583]] [[[ 2.17644781]]
+
+#  [[-2.05382188]]
+
+#  [[ 0.80540998]]
+
+#  [[-0.21336871]]]
+
+
+# [[2.72848549]] [[[ 0.57159361]]
+
+#  [[ 0.15256034]]
+
+#  [[ 0.28758005]]
+
+#  [[-1.81879821]]]
+
+# [[2.93074311]] [[[-0.08186377]]
+
+#  [[-0.73037747]]
+
+#  [[ 0.69007207]]
+
+#  [[-0.02080297]]]
+
 class CausalAdditiveNoSpurious(Envs):
   def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1, d_u = 1, d_x_y = 1, guassian_normalized_weight = False):
     super(CausalAdditiveNoSpurious, self).__init__()
@@ -29,7 +54,7 @@ class CausalAdditiveNoSpurious(Envs):
       self.w_x_z_perp = np.random.uniform(low = 2, high = 3, size=(d_x_z_perp, 1)) 
     
     #input_dim 
-    self.input_dim = self.d_x_z_perp + self.d_x_y_perp + self.d_x_y
+    self.input_dim = self.d_x_z_perp + self.d_x_y
 
     self.env_means = [0.1, 2, 0.3, 5]
     self.num_total_envs = len(self.env_means)
@@ -42,8 +67,8 @@ class CausalAdditiveNoSpurious(Envs):
         self.w_u_all[i,:,:] = np.random.randn(self.d_u, 1)
         self.w_u_all[i,:,:] = self.w_u_all[i,:,:]/np.linalg.norm(self.w_u_all[i,:,:], axis=0)
       else:
-        self.w_u_all[i,:,:] = np.random.uniform(low = -3, high = 3, size=(self.d_u, 1))
-    # print(self.w_x_z_perp, self.w_u_all[i,:,:])
+        self.w_u_all[i,:,:] = np.random.uniform(low = -2, high = 2, size=(self.d_u, 1))
+    print(self.w_x_z_perp, self.w_u_all)
   
   def sample_envs(self, env_ind, n = 100):
     """ 
@@ -63,10 +88,10 @@ class CausalAdditiveNoSpurious(Envs):
       y = self.fn_y(x_z_perp, self.w_x_z_perp, x_y_perp, w_u) 
 
     if self.d_x_y != 0:
-      x_y = self.phi_x_y_perp(y) * self.env_means[env_ind] + np.random.randn(n, self.d_x_y) * 0.1
-      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp, x_y], axis=1)), torch.Tensor(y)
+      x_y = self.phi_x_y_perp(y) + np.random.randn(n, self.d_x_y) * self.env_means[env_ind]
+      return torch.Tensor(np.concatenate([x_z_perp, x_y], axis=1)), torch.Tensor(y)
     else:
-      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
+      return torch.Tensor(np.concatenate([x_z_perp], axis=1)), torch.Tensor(y)
 
   def phi_base(self, x):
     return np.cos(np.pi * x)
