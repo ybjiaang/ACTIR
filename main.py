@@ -57,7 +57,7 @@ if __name__ == '__main__':
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike')
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
   # synthetic dataset specifics
-  parser.add_argument('--syn_dataset_train_size', type=int, default= 256, help='size of synthetic dataset per env')
+  parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
   # bike sharing specifics
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
