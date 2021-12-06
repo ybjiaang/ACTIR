@@ -85,3 +85,44 @@ def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, cuda=False):
   return HSIC
 
   
+
+def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fine_tune_points = 1, test_unlabelled_dataset = None, run_proj_gd = False):
+  # Finetuning tests
+  finetuned_loss = 0.0
+  if run_proj_gd:
+    projected_gd_finetuned_loss = 0.0
+
+  x, y = test_finetune_dataset
+  n_total_finetune_datapoints = x.shape[0]
+
+  for i in range(config.n_fine_tune_tests):
+    perm = np.random.permutation(n_total_finetune_datapoints)
+    
+    x_perm = x[perm]
+    y_perm = y[perm]
+
+    partical_test_finetune_dataset = (x_perm[:n_fine_tune_points,:], y_perm[:n_fine_tune_points])
+
+    if test_unlabelled_dataset is not None:
+      if run_proj_gd:
+        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=True)
+        _, proj_gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+        projected_gd_finetuned_loss+=proj_gd_loss_this_epoch
+
+      trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+      _, gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+      finetuned_loss+=gd_loss_this_epoch
+    else:
+      model = trainer.finetune_test(partical_test_finetune_dataset)
+      finetuned_loss+=trainer.test(test_dataset, input_model = model, print_flag=False)
+
+
+  finetuned_loss /= config.n_fine_tune_tests
+
+  if run_proj_gd:
+    projected_gd_finetuned_loss /= config.n_fine_tune_tests
+    print(finetuned_loss, projected_gd_finetuned_loss)
+    return finetuned_loss, projected_gd_finetuned_loss
+  else:
+    print(finetuned_loss)
+    return finetuned_loss

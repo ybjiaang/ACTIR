@@ -99,7 +99,7 @@ class AdaptiveInvariantNNTrainer():
     return base_loss.item()/batch_num, loss.item()/batch_num
 
 
-  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = True):
+  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = False):
     self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
     self.model.set_etas_to_zeros()
 

@@ -29,6 +29,7 @@ from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
+from misc import fine_tunning_test
 
 
 if __name__ == '__main__':
@@ -46,6 +47,11 @@ if __name__ == '__main__':
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
   parser.add_argument('--compare_all_invariant_models', action='store_true', help='compare all invariant models')
+
+  # finetune
+  parser.add_argument('--run_fine_tune_test', action='store_true', help='run finetunning tests')
+  parser.add_argument('--n_fine_tune_tests', type=int, default= 10, help='number of fine tunning tests')
+  parser.add_argument('--n_fine_tune_points', nargs='+', type=int, help='how many points for finetuning')
 
   # dataset
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike')
@@ -141,6 +147,7 @@ if __name__ == '__main__':
   # loss fn
   criterion = torch.nn.MSELoss(reduction='mean')
 
+  """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = HSIC(model, criterion, args)
@@ -179,6 +186,7 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/hsic_comparision_after.png")
 
+  """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = IRM(model, criterion, args)
@@ -217,6 +225,8 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/irm_comparision_after.png")
 
+
+  """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = ERM(model, criterion, args)
@@ -255,6 +265,8 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/erm_comparision_after.png")
 
+
+  """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
     trainer = LinearMAML(model, criterion, args)
@@ -293,19 +305,12 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/maml_comparision_after.png")
 
-    if True:
-      # Finetuning tests
-      finetuned_loss = 0.0
-      for i in range(8):
-        x, y = test_finetune_dataset
+    if args.run_fine_tune_test:
+      maml_finetune_loss = []
+      for n_tune_points in  args.n_fine_tune_points:
+        maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
-        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
-
-        model = trainer.finetune_test(partical_test_finetune_dataset)
-        finetuned_loss+=trainer.test(test_dataset, input_model = model, print_flag=False)
-
-      print(finetuned_loss/8)
-
+  """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
@@ -333,7 +338,6 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-
     if args.print_base_graph: 
       # check if the base classifer match after training
       with torch.no_grad(): 
@@ -345,20 +349,12 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
-    if True:
-      # Finetuning tests
-      finetuned_loss = 0.0
-      for i in range(8):
-        x, y = test_finetune_dataset
+    if args.run_fine_tune_test:
+      anti_causal_finetune_loss = []
+      for n_tune_points in  args.n_fine_tune_points:
+        anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
 
-        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
-
-        model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-        _, fine_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
-        finetuned_loss+=fine_loss_this_epoch
-
-      print(finetuned_loss/8)
-
+  """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
@@ -397,30 +393,23 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/adp_invar_comparision_after.png")
 
-    if True:
-      # Finetuning tests
-      proj_gd_loss = 0.0
-      gd_loss = 0.0
-      for i in range(8):
-        x, y = test_finetune_dataset
-
-        partical_test_finetune_dataset = (x[i:i+1,:], y[i:i+1])
-
-        # print("prjected gradient descent")
-        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-        _, proj_gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
-        proj_gd_loss+=proj_gd_loss_this_epoch
-
-        # print("regular gradient descent")
-        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=False)
-        _, gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
-        gd_loss+=gd_loss_this_epoch
-
-      print(proj_gd_loss/8, gd_loss/8)
-
+    if args.run_fine_tune_test:
+      causal_proj_gd_losses = []
+      causal_gd_losses = []
+      for n_tune_points in  args.n_fine_tune_points:
+        causal_proj_gd_loss, causal_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
+        causal_proj_gd_losses.append(causal_proj_gd_loss)
+        causal_gd_losses.append(causal_gd_loss)
 
   if args.compare_all_invariant_models:
     with open(args.cvs_dir, 'a', newline='') as file: 
       writer = csv.writer(file)
-      writer.writerow([hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss])
+      row = [hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss]
+      if args.run_fine_tune_test:
+        for i, n_tune_points in enumerate(args.n_fine_tune_points):
+          row.append(maml_finetune_loss[i])
+          row.append(anti_causal_finetune_loss[i])
+          row.append(causal_proj_gd_losses[i])
+          row.append(causal_gd_losses[i])
+      writer.writerow(row)
     print(hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss)
