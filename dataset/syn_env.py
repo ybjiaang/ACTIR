@@ -51,12 +51,12 @@ class CausalAdditiveNoSpurious(Envs):
       self.w_x_z_perp = np.random.randn(d_x_z_perp, 1)
       self.w_x_z_perp = self.w_x_z_perp/np.linalg.norm(self.w_x_z_perp, axis=0)
     else:
-      self.w_x_z_perp = np.random.uniform(low = 2, high = 3, size=(d_x_z_perp, 1)) 
+      self.w_x_z_perp = np.random.uniform(low = 4, high = 5, size=(d_x_z_perp, 1)) 
     
     #input_dim 
-    self.input_dim = self.d_x_z_perp + self.d_x_y
+    self.input_dim = self.d_x_z_perp + self.d_x_y_perp + self.d_x_y
 
-    self.env_means = [0.1, 2, 0.3, 5]
+    self.env_means = [0.1, 2, 5, 10]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
 
@@ -67,17 +67,18 @@ class CausalAdditiveNoSpurious(Envs):
         self.w_u_all[i,:,:] = np.random.randn(self.d_u, 1)
         self.w_u_all[i,:,:] = self.w_u_all[i,:,:]/np.linalg.norm(self.w_u_all[i,:,:], axis=0)
       else:
-        self.w_u_all[i,:,:] = np.random.uniform(low = -2, high = 2, size=(self.d_u, 1))
+        self.w_u_all[i,:,:] = np.random.uniform(low = -1, high = 1, size=(self.d_u, 1))
     print(self.w_x_z_perp, self.w_u_all)
   
   def sample_envs(self, env_ind, n = 100):
     """ 
     sample data from our enviroment sets
     """
-    x_z_perp = np.random.uniform(low = -1, high = 1, size=(n, self.d_x_z_perp))
-    x_y_perp = np.random.uniform(low = -1, high = 1, size=(n, self.d_u))  
-    # x_z_perp =  np.random.randn(n, self.d_x_z_perp)
-    # x_y_perp =  np.random.randn(n, self.d_u)
+    # x_z_perp = np.random.uniform(low = -1, high = 1, size=(n, self.d_x_z_perp))
+    # x_y_perp = np.random.uniform(low = -1, high = 1, size=(n, self.d_u))  
+    x_z_perp =  np.random.randn(n, self.d_x_z_perp)
+    u =  np.random.randn(n, self.d_u) * self.env_means[env_ind]
+    x_y_perp = self.phi_u(u)
 
     # weight vector for u
     w_u = self.w_u_all[env_ind,:,:]
@@ -85,13 +86,13 @@ class CausalAdditiveNoSpurious(Envs):
     if env_ind == self.num_total_envs - 1:
       y = self.fn_y_base(x_z_perp, self.w_x_z_perp)
     else:
-      y = self.fn_y(x_z_perp, self.w_x_z_perp, x_y_perp, w_u) 
+      y = self.fn_y(x_z_perp, self.w_x_z_perp, x_y_perp, w_u) + x_y_perp
 
     if self.d_x_y != 0:
-      x_y = self.phi_x_y_perp(y) + np.random.randn(n, self.d_x_y) * self.env_means[env_ind]
-      return torch.Tensor(np.concatenate([x_z_perp, x_y], axis=1)), torch.Tensor(y)
+      x_y = self.phi_base(y) + u #np.random.randn(n, self.d_x_y) * self.env_means[env_ind]
+      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp, x_y], axis=1)), torch.Tensor(y)
     else:
-      return torch.Tensor(np.concatenate([x_z_perp], axis=1)), torch.Tensor(y)
+      return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
 
   def phi_base(self, x):
     return np.cos(np.pi * x)
@@ -101,11 +102,11 @@ class CausalAdditiveNoSpurious(Envs):
 
   def phi_x_y_perp(self, x):
     n = x.shape[0]
-    return 1 / (1 + np.exp(-x)) + np.random.randn(n, x.shape[1])*0.1
+    return 1 / (1 + np.exp(-x))
   
   def fn_y(self, x_z_perp, w_x_z_perp, u, w_u):
     n = x_z_perp.shape[0]
-    return self.phi_base(x_z_perp) @ w_x_z_perp + self.phi_u(u) @ w_u + np.random.randn(n, 1)*0.1
+    return self.phi_base(x_z_perp) @ w_x_z_perp + u @ w_u + np.random.randn(n, 1)*0.1
   
   def fn_y_base(self, x_z_perp, w_x_z_perp):
     return self.phi_base(x_z_perp) @ w_x_z_perp
