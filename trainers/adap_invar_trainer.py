@@ -86,16 +86,20 @@ class AdaptiveInvariantNNTrainer():
     loss = 0
     batch_num = 0
     base_loss = 0
+    var = 0
+    base_var = 0
     for x, y in batchify(test_dataset, batch_size):
       f_beta, f_eta, _ = self.model(x, self.eta_test_ind)
 
       loss += self.criterion(f_beta + f_eta, y) 
+      var += torch.var(f_beta + f_eta - y, unbiased=False)
       base_loss += self.criterion(f_beta, y) 
+      base_var += torch.var(f_beta - y, unbiased=False)
       batch_num += 1
 
     if print_flag:
-        print(f"Bse Test loss {base_loss.item()/batch_num}")
-        print(f"Test loss {loss.item()/batch_num}")
+        print(f"Bse Test loss {base_loss.item()/batch_num}, " + f"Bse Var {base_var.item()/batch_num}")
+        print(f"Test loss {loss.item()/batch_num} " + f"Test Var {var.item()/batch_num}")
     return base_loss.item()/batch_num, loss.item()/batch_num
 
 

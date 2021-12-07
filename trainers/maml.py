@@ -76,15 +76,17 @@ class LinearMAML():
     test_model.eval()
     loss = 0
     batch_num = 0
+    base_var = 0
     
     for x, y in batchify(test_dataset, batch_size):
       f_beta, _ = test_model(x, fast_beta = fast_weights)
       
       loss += self.criterion(f_beta, y) 
+      base_var += torch.var(f_beta - y, unbiased=False)
       batch_num += 1
       
     if print_flag:
-      print(f"Bse Test loss {loss.item()/batch_num}") 
+      print(f"Bse Test loss {loss.item()/batch_num} " + f"Bse Var {base_var.item()/batch_num}")
     
     return loss.item()/batch_num
 
