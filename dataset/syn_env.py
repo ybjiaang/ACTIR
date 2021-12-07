@@ -43,7 +43,7 @@ class CausalAdditiveNoSpurious(Envs):
         self.w_u_all[i,:,:] = np.random.randn(self.d_u, 1)
         self.w_u_all[i,:,:] = self.w_u_all[i,:,:]/self.d_u
       else:
-        self.w_u_all[i,:,:] = np.random.uniform(low = -0.5, high = 0.5, size=(self.d_u, 1))
+        self.w_u_all[i,:,:] = np.random.uniform(low = -1.0, high = 1.0, size=(self.d_u, 1))
 
     self.w_u_y_all = np.zeros((self.num_total_envs, self.d_u, self.d_x_y_perp))
     for i in range(self.num_total_envs):
@@ -51,13 +51,13 @@ class CausalAdditiveNoSpurious(Envs):
         self.w_u_y_all[i,:,:] = np.random.randn(self.d_u, self.d_x_y_perp)
         self.w_u_y_all[i,:,:] = self.w_u_y_all[i,:,:]/self.d_u
       else:
-        self.w_u_y_all[i,:,:] = np.random.uniform(low = -0.5, high = 0.5, size=(self.d_u, self.d_x_y_perp))
+        self.w_u_y_all[i,:,:] = np.random.uniform(low = -1.0, high = 1.0, size=(self.d_u, self.d_x_y_perp))
   
     if guassian_normalized_weight:
       self.w_x_y_all = np.random.randn(self.d_x_y_perp, 1)
       self.w_x_y_all = self.w_x_y_all/self.d_x_y_perp
     else:
-      self.w_x_y_all = np.random.uniform(low = -0.5, high = 0.5, size=(self.d_x_y_perp, 1)) 
+      self.w_x_y_all = np.random.uniform(low = -1.0, high = 1.0, size=(self.d_x_y_perp, 1)) 
 
   def sample_envs(self, env_ind, n = 100):
     """ 

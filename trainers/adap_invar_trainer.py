@@ -79,7 +79,11 @@ class AdaptiveInvariantNNTrainer():
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 
-  
+    with torch.no_grad():
+      for i in range(1, n_train_envs):
+        self.model.etas[0] += self.model.etas[i]
+      self.model.etas[0] /= n_train_envs
+
   def test(self, test_dataset, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])
     self.model.eval()
@@ -100,7 +104,7 @@ class AdaptiveInvariantNNTrainer():
     if print_flag:
         print(f"Bse Test loss {base_loss.item()/batch_num}, " + f"Bse Var {base_var.item()/batch_num}")
         print(f"Test loss {loss.item()/batch_num} " + f"Test Var {var.item()/batch_num}")
-    return base_loss.item()/batch_num, loss.item()/batch_num
+    return loss.item()/batch_num, loss.item()/batch_num
 
 
   def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = False):
