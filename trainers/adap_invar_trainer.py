@@ -44,8 +44,8 @@ class AdaptiveInvariantNNTrainer():
             f_beta, f_eta, _ = self.model(x, env_ind)
             if self.causal_dir:
               hsic_loss = HSICLoss(f_beta, f_eta)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
             else:
               f_concat = torch.concat([f_beta, f_eta], axis=1)
               f_size = f_concat.shape[0]
