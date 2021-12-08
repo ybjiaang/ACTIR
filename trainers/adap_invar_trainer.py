@@ -107,7 +107,7 @@ class AdaptiveInvariantNNTrainer():
         print(f"Test loss {loss.item()/batch_num} " + f"Test Var {var.item()/batch_num}")
     
     if self.causal_dir:
-      return loss.item()/batch_num, loss.item()/batch_num
+      return base_loss.item()/batch_num, loss.item()/batch_num
     else:
       return base_loss.item()/batch_num, loss.item()/batch_num
 
