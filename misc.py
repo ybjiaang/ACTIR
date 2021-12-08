@@ -16,6 +16,30 @@ def batchify(dataset, batch_size):
 
   return creatDataSet()
 
+def env_batchify(dataset, batch_size):
+  n_envs = len(dataset)
+  all_lens = np.zeros(n_envs)
+  for i, dataset_per_env in enumerate(dataset):
+    all_lens[i] = dataset_per_env[0].shape[0]
+
+  total_length_min = np.min(all_lens)
+  nloops = np.ceil(total_length_min/batch_size).astype(int)
+
+  def creatDataSet():
+    for i in range(nloops):
+      start = i*batch_size
+      train_sqt_set = []
+
+      for env_ind in range(n_envs):
+        x, y = dataset[env_ind]
+        if (start + batch_size) >= all_lens[env_ind]:
+          train_sqt_set.append((x[start:], y[start:]))
+        else:
+          train_sqt_set.append((x[start : start + batch_size], y[start : start + batch_size]))
+
+      yield train_sqt_set
+      
+  return creatDataSet()
 
 def maml_batchify(dataset, batch_size):
   n_envs = len(dataset)

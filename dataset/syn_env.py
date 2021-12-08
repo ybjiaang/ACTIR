@@ -32,7 +32,7 @@ class CausalAdditiveNoSpurious(Envs):
     #input_dim 
     self.input_dim = self.d_x_z_perp + self.d_x_y + self.d_x_y_perp 
 
-    self.env_means = [0.2, 2.0, 4.0, 5.0]
+    self.env_means = [0.2, 5.0, 4.0, 2.0]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
 

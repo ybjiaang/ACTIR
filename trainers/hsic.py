@@ -5,7 +5,7 @@ import copy
 from tqdm import tqdm
 from torch.autograd import grad
 
-from misc import batchify, HSICLoss
+from misc import batchify, HSICLoss, env_batchify
 
 class HSIC():
   def __init__(self, model, loss_fn, config):
@@ -27,17 +27,17 @@ class HSIC():
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
-
-      loss = 0
-      for env_ind in range(n_train_envs):
-        for x, y in batchify(train_dataset[env_ind], batch_size):
+      for train in env_batchify(train_dataset, batch_size):
+        loss = 0
+        for env_ind in range(n_train_envs):
+          x, y = train[env_ind]
           f_beta, _ = self.model(x)
           error = HSICLoss(f_beta, y - f_beta)
           loss += error
 
-      self.optimizer.zero_grad()
-      loss.backward()
-      self.optimizer.step()
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
       if t % 10 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))

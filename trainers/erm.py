@@ -4,7 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify
+from misc import batchify, env_batchify
 
 class ERM():
   def __init__(self, model, loss_fn, config):
@@ -19,22 +19,22 @@ class ERM():
 
 
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 10):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100):
     n_train_envs = len(train_dataset)
 
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
-
-      loss = 0
-      for env_ind in range(n_train_envs):
-        for x, y in batchify(train_dataset[env_ind], batch_size):
+      for train in env_batchify(train_dataset, batch_size):
+        loss = 0
+        for env_ind in range(n_train_envs):
+          x, y = train[env_ind]
           f_beta, _ = self.model(x)
           loss += self.criterion(f_beta, y)
 
-      self.optimizer.zero_grad()
-      loss.backward()
-      self.optimizer.step()
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
       if t % 10 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))

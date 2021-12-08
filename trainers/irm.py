@@ -5,7 +5,7 @@ import copy
 from tqdm import tqdm
 from torch.autograd import grad
 
-from misc import batchify
+from misc import batchify, env_batchify
 
 class IRM():
   def __init__(self, model, loss_fn, config, reg_lambda=0.1):
@@ -28,19 +28,19 @@ class IRM():
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
-
-      loss = 0
-      penalty = 0
-      for env_ind in range(n_train_envs):
-        for x, y in batchify(train_dataset[env_ind], batch_size):
+      for train in env_batchify(train_dataset, batch_size):
+        loss = 0
+        penalty = 0
+        for env_ind in range(n_train_envs):
+          x, y = train[env_ind]
           f_beta, _ = self.model(x)
           error = self.criterion(f_beta, y)
           penalty += grad(error, self.model.beta, create_graph=True)[0].pow(2).mean()
           loss += error
 
-      self.optimizer.zero_grad()
-      (self.reg_lambda * penalty + loss).backward()
-      self.optimizer.step()
+        self.optimizer.zero_grad()
+        (self.reg_lambda * penalty + loss).backward()
+        self.optimizer.step()
 
       if t % 10 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))
