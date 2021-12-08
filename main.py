@@ -289,7 +289,7 @@ if __name__ == '__main__':
       plt.savefig("png_folder/maml_comparision_before.png")
 
     print("maml training...")
-    trainer.train(train_dataset, args.batch_size)
+    maml_train_loss = trainer.train(train_dataset, args.batch_size)
 
     print("maml test...")
     maml_loss = trainer.test(test_dataset)
@@ -313,7 +313,7 @@ if __name__ == '__main__':
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
-    trainer = AdaptiveInvariantNNTrainerMeta(model, criterion, args.reg_lambda, args, causal_dir = False)
+    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
     if args.print_base_graph:
       # check if the base classifer match before training
@@ -357,7 +357,7 @@ if __name__ == '__main__':
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
-    trainer = AdaptiveInvariantNNTrainerMeta(model, criterion, args.reg_lambda, args)
+    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:
       # check if the base classifer match before training
@@ -404,7 +404,7 @@ if __name__ == '__main__':
   if args.compare_all_invariant_models:
     with open(args.cvs_dir, 'a', newline='') as file: 
       writer = csv.writer(file)
-      row = [hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
+      row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
       if args.run_fine_tune_test:
         for i, n_tune_points in enumerate(args.n_fine_tune_points):
           row.append(maml_finetune_loss[i])
@@ -412,4 +412,4 @@ if __name__ == '__main__':
           row.append(causal_proj_gd_losses[i])
           row.append(causal_gd_losses[i])
       writer.writerow(row)
-    print(hsic_loss, irm_loss, erm_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss)
+    print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss)

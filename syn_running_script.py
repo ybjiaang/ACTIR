@@ -22,8 +22,8 @@ if os.path.exists(filename):
 
 with open(filename, 'a', newline='') as file: 
     writer = csv.writer(file)
-    writer.writerow(["HSIC", "IRM", "ERM", "MAML", "Anti-Causal", "Causal Base", "Causal"])
+    writer.writerow(["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal", "Causal Base", "Causal"])
 
-for _ in range(100):
+for _ in range(10):
     cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=causal --cvs_dir={:}'.format(filename)
     run_cmd(cmd)

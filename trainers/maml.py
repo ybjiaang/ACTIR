@@ -64,6 +64,8 @@ class LinearMAML():
         
       if t % 10 == 0 and self.config.verbose:
         print(loss.item())
+    
+    return loss.item()
 
   
   def test(self, test_dataset, batch_size = 32, input_model = None, print_flag = True):
