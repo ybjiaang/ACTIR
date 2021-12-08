@@ -25,12 +25,12 @@ from dataset.bike_env import BikeSharingDataset
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
+from trainers.adap_invar_trainer_meta import AdaptiveInvariantNNTrainerMeta
 from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
 from misc import fine_tunning_test
-
 
 if __name__ == '__main__':
   # torch.manual_seed(0)
@@ -313,7 +313,7 @@ if __name__ == '__main__':
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
-    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
+    trainer = AdaptiveInvariantNNTrainerMeta(model, criterion, args.reg_lambda, args, causal_dir = False)
 
     if args.print_base_graph:
       # check if the base classifer match before training
@@ -357,7 +357,7 @@ if __name__ == '__main__':
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
-    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
+    trainer = AdaptiveInvariantNNTrainerMeta(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:
       # check if the base classifer match before training

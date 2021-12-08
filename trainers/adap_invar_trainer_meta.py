@@ -4,9 +4,9 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify, HSICLoss, ConditionalHSICLoss
+from misc import batchify, HSICLoss, ConditionalHSICLoss, maml_batchify
 
-class AdaptiveInvariantNNTrainer():
+class AdaptiveInvariantNNTrainerMeta():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
     self.model = copy.deepcopy(model)
     self.config = config
@@ -17,74 +17,83 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.fast_update_lr = 1e-2
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_phi()
     self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
+    # self.model.freeze_all_but_beta()
+    # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
 
     # during test, use the first eta
     self.eta_test_ind = 0
-    
 
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 20):
-    n_train_envs = len(train_dataset)
+  def meta_update(self, train_batch, train_query_batch, n_inner_loop = 20):
+    n_train_envs = len(train_batch)
 
-    self.model.train()
+    self.model.freeze_all_but_beta()
+    loss_query = 0
+    parameter_to_update = [self.model.etas[self.eta_test_ind]]
+    for env_ind in range(n_train_envs):
+      x, y = train_batch[env_ind]
+      x_query, y_query = train_query_batch[env_ind]
+      loss = self.inner_loss(x, y, env_ind, parameter_to_update)
+      grad = torch.autograd.grad(loss, parameter_to_update)
 
-    for t in tqdm(range(n_outer_loop)):
+      fast_weights = list(map(lambda p: p[1] - self.fast_update_lr * p[0], zip(grad, parameter_to_update)))
 
-      # update indivual etas
-      self.model.freeze_all_but_etas()
-      for env_ind in range(n_train_envs):
-        for _ in range(n_inner_loop):
-          loss = 0
-          batch_num = 0
-          for x, y in batchify(train_dataset[env_ind], batch_size):
-            batch_num += 1
-            f_beta, f_eta, _ = self.model(x, env_ind)
-            if self.causal_dir:
-              hsic_loss = HSICLoss(f_beta, f_eta)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
-            else:
-              f_concat = torch.concat([f_beta, f_eta], axis=1)
-              f_size = f_concat.shape[0]
-              reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
+      for k in range(1, n_inner_loop):
+        loss = self.inner_loss(x, y, env_ind, fast_weights)
+        grad = torch.autograd.grad(loss, fast_weights)
+        fast_weights = list(map(lambda p: p[1] - self.fast_update_lr * p[0], zip(grad, fast_weights)))
 
-              # hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-            # print(loss.item())
+      f_beta, f_eta, _ = self.model(x_query, env_ind, fast_eta = fast_weights)
+      loss_query += self.criterion(f_beta + f_eta, y_query) + self.criterion(f_beta, y_query)
 
-          self.inner_optimizer.zero_grad()
-          loss.backward()
-          self.inner_optimizer.step()
-
-      # update phi
-      self.model.freeze_all_but_phi()
-      phi_loss = 0
-      for env_ind in range(n_train_envs):
-        for x, y in batchify(train_dataset[env_ind], batch_size):
-          f_beta, f_eta, _ = self.model(x, env_ind)
-          phi_loss += self.criterion(f_beta + f_eta, y) + self.criterion(f_beta, y)
+      loss_query = loss_query / n_train_envs
 
       self.outer_optimizer.zero_grad()
-      phi_loss.backward()
+      loss_query.backward()
       self.outer_optimizer.step()
 
-      if t % 10 == 0 and self.config.verbose:
-        print(phi_loss.item()/(n_train_envs*batch_size))
+      return loss_query
 
+  # Define training Loop
+  def train(self, train_dataset, batch_size, n_outer_loop = 100):
+
+    self.model.train()
+    for t in tqdm(range(n_outer_loop)):
+      train_spt_set = []
+      train_query_set = []
+
+      for train_spt_set, train_query_set in maml_batchify(train_dataset, batch_size):
+        loss = self.meta_update(train_spt_set, train_query_set)
+        
+      if t % 10 == 0 and self.config.verbose:
+        print(loss.item())
+
+      if self.causal_dir:
+        with torch.no_grad():
+          self.test_eta = torch.Tensor(self.model.etas[0].numpy()).clone().detach()
+
+  def inner_loss(self, x, y, env_ind, fast_weight=None):
+    f_beta, f_eta, _ = self.model(x, env_ind, fast_eta=fast_weight)
     if self.causal_dir:
-      with torch.no_grad():
-        for i in range(1, n_train_envs):
-          self.model.etas[0] += self.model.etas[i]
-        self.model.etas[0] /= n_train_envs
-        self.test_eta = torch.Tensor(self.model.etas[0].numpy()).clone().detach()
+      hsic_loss = HSICLoss(f_beta, f_eta)
+      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+      # loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+    else:
+      f_concat = torch.concat([f_beta, f_eta], axis=1)
+      f_size = f_concat.shape[0]
+      reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
+
+			# hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
+    
+    return loss
 
   def test(self, test_dataset, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])

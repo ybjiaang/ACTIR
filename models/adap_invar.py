@@ -25,11 +25,14 @@ class AdaptiveInvariantNN(nn.Module):
     # Define \eta
     self.etas = nn.ParameterList([torch.nn.Parameter(torch.zeros(self.phi_odim, 1), requires_grad = True) for i in range(n_batch_envs)]) 
 
-  def forward(self, x, env_ind):
+  def forward(self, x, env_ind, fast_eta = None):
     rep = self.Phi(x)
 
     f_beta = rep @ self.beta
-    f_eta = rep @ self.etas[env_ind]
+    if fast_eta is None:
+      f_eta = rep @ self.etas[env_ind]
+    else:
+      f_eta = rep @ fast_eta[0]
 
     return f_beta, f_eta, rep
 
