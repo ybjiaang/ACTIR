@@ -25,6 +25,6 @@ for bike_season in range(4):
       writer = csv.writer(file)
       writer.writerow(["HSIC", "IRM", "ERM", "MAML", "Anti-Causal", "Causal Base", "Causal"])
     
-    for _ in range(50):
+    for _ in range(30):
         cmd = 'python main.py --compare_all_invariant_models --dataset=bike --bike_test_season={:} --bike_year=0 --cvs_dir={:}'.format(bike_season, filename)
         run_cmd(cmd)

@@ -16,7 +16,7 @@ class HSIC():
     self.criterion = loss_fn
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-2)
+    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
 
     self.bias_adjustment = torch.nn.Parameter(torch.zeros(1), requires_grad = False) 
 
