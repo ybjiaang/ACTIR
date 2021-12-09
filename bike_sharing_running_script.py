@@ -16,6 +16,7 @@ if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
 bike_year = 0
+n_fine_tune_points = [1, 5, 10, 20]
 for bike_season in range(4):
     filename = log_directory + "/" + "test_season_" + str(bike_season) + "_year_" + str(bike_year) + ".csv"
     if os.path.exists(filename):
@@ -23,8 +24,16 @@ for bike_season in range(4):
 
     with open(filename, 'a', newline='') as file: 
       writer = csv.writer(file)
-      writer.writerow(["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal", "Causal Base", "Causal"])
+      colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal", "Causal Base", "Causal"]
+      for point in n_fine_tune_points:
+          colname.append("MAML " + str(point))
+          colname.append("Anti Causal " + str(point))
+          colname.append("Causal (projected) " + str(point))
+          colname.append("Causal " + str(point))
+      writer.writerow(colname)
     
     for _ in range(30):
-        cmd = 'python main.py --compare_all_invariant_models --dataset=bike --bike_test_season={:} --bike_year=0 --cvs_dir={:}'.format(bike_season, filename)
+        cmd = 'python main.py --compare_all_invariant_models --dataset=bike --bike_test_season={:} --bike_year=0 --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(bike_season, filename)
+        for point in n_fine_tune_points:
+            cmd += " " + str(point)
         run_cmd(cmd)
