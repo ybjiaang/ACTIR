@@ -107,7 +107,7 @@ class AntiCausal(CausalAdditiveNoSpurious):
 
     self.input_dim = self.d_u_perp + self.d_x_y_u
 
-    self.env_means = [0.2, 5.0, 4.0, 2.0]
+    self.env_means = [0.2, 2.0, 4.0, 5.0]
     self.env_means[-1] = np.random.uniform(low=0.1, high=5)
 
   def sample_envs(self, env_ind, n = 100):
