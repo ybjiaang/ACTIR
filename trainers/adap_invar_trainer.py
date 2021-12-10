@@ -105,30 +105,42 @@ class AdaptiveInvariantNNTrainer():
       
     if self.causal_dir:
       M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)
+      mean_phi = torch.zeros((self.model.phi_odim), requires_grad=False)
       # Estimate covariance matrix
+      total_num_entries = test_finetune_dataset[0].shape[0]
       if test_unlabeld_dataset == None:
         for i in range(test_finetune_dataset[0].shape[0]):
           x = test_finetune_dataset[0][i]
           self.model.eval()
           _, _, rep = self.model(x, self.eta_test_ind)
           M += torch.outer(rep, rep)
+          mean_phi += rep
         
-        M /= test_finetune_dataset[0].shape[0]
+        mean_phi /= total_num_entries
+        M /= total_num_entries
+
+        M = (M - torch.outer(mean_phi, mean_phi)) * total_num_entries / (total_num_entries - 1)
 
       else:
+        total_num_entries = test_unlabeld_dataset[0].shape[0] + test_finetune_dataset[0].shape[0]
         for i in range(test_unlabeld_dataset[0].shape[0]):
           x = test_unlabeld_dataset[0][i]
           self.model.eval()
           _, _, rep = self.model(x, self.eta_test_ind)
           M += torch.outer(rep, rep)
+          mean_phi += rep
 
         for i in range(test_finetune_dataset[0].shape[0]):
           x = test_finetune_dataset[0][i]
           self.model.eval()
           _, _, rep = self.model(x, self.eta_test_ind)
           M += torch.outer(rep, rep)
+          mean_phi += rep
         
-        M /= (test_unlabeld_dataset[0].shape[0] + test_finetune_dataset[0].shape[0])
+        mean_phi /= total_num_entries
+        M /= total_num_entries
+
+        M = (M - torch.outer(mean_phi, mean_phi)) * total_num_entries / (total_num_entries - 1)
 
     self.model.train()
     self.model.freeze_all_but_etas()
