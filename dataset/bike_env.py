@@ -9,7 +9,7 @@ import pandas as pd
 # x: temperature, feeling temperature, wind speed, humidity 
 # y: cnt
 class BikeSharingDataset(object):
-    def __init__(self, cvs_dir = "dataset/Bike-Sharing-Dataset/hour.csv", test_season = 0, test_finetune_size = 10, test_unlabled_size=32, year = 1):
+    def __init__(self, cvs_dir = "dataset/Bike-Sharing-Dataset/hour.csv", test_season = 0, test_finetune_size = 50, test_unlabled_size=100, year = 1):
         super(BikeSharingDataset, self).__init__()
         self.cvs_dir = cvs_dir
         self.num_total_envs = 4
@@ -23,7 +23,7 @@ class BikeSharingDataset(object):
         self.input_dim = self.test_data[0].shape[1]
 
     def read_files(self):
-        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'holiday', 'weekday', 'workingday', 'temp', 'casual'])
+        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'holiday', 'weekday', 'workingday', 'windspeed', 'casual'])
         data_array = data.to_numpy()
         self.train_data_by_season = []
         self.val_data_by_season = []

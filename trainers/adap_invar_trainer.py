@@ -18,7 +18,7 @@ class AdaptiveInvariantNNTrainer():
     # optimizer
     self.model.freeze_all_but_etas()
     self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
-    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
     self.model.freeze_all_but_phi()
     self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
@@ -176,7 +176,6 @@ class AdaptiveInvariantNNTrainer():
       
     if self.causal_dir:
       M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)
-
       # Estimate covariance matrix
       if test_unlabeld_dataset == None:
         for i in range(test_finetune_dataset[0].shape[0]):
@@ -193,8 +192,14 @@ class AdaptiveInvariantNNTrainer():
           self.model.eval()
           _, _, rep = self.model(x, self.eta_test_ind)
           M += torch.outer(rep, rep)
+
+        for i in range(test_finetune_dataset[0].shape[0]):
+          x = test_finetune_dataset[0][i]
+          self.model.eval()
+          _, _, rep = self.model(x, self.eta_test_ind)
+          M += torch.outer(rep, rep)
         
-        M /= test_unlabeld_dataset[0].shape[0]
+        M /= (test_unlabeld_dataset[0].shape[0] + test_finetune_dataset[0].shape[0])
 
     self.model.train()
     self.model.freeze_all_but_etas()
@@ -212,6 +217,7 @@ class AdaptiveInvariantNNTrainer():
       self.test_inner_optimizer.zero_grad()
       loss.backward()
       self.test_inner_optimizer.step()
+      # print(loss.item())
 
       if self.causal_dir:
         """ projected gradient descent """

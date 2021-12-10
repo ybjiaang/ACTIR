@@ -397,7 +397,7 @@ if __name__ == '__main__':
       causal_proj_gd_losses = []
       causal_gd_losses = []
       for n_tune_points in  args.n_fine_tune_points:
-        causal_proj_gd_loss, causal_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
+        causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
         causal_proj_gd_losses.append(causal_proj_gd_loss)
         causal_gd_losses.append(causal_gd_loss)
 
