@@ -44,16 +44,16 @@ class AdaptiveInvariantNNTrainer():
             f_beta, f_eta, _ = self.model(x, env_ind)
             if self.causal_dir:
               hsic_loss = HSICLoss(f_beta, f_eta)
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
             else:
-              f_concat = torch.concat([f_beta, f_eta], axis=1)
-              f_size = f_concat.shape[0]
-              reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
+              # f_concat = torch.concat([f_beta, f_eta], axis=1)
+              # f_size = f_concat.shape[0]
+              # reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
 
-              # hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
+              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
             # print(loss.item())
 
           self.inner_optimizer.zero_grad()
@@ -76,70 +76,6 @@ class AdaptiveInvariantNNTrainer():
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 
-    # if self.causal_dir:
-    #   with torch.no_grad():
-    #     for i in range(1, n_train_envs):
-    #       self.model.etas[0] += self.model.etas[i]
-    #     self.model.etas[0] /= n_train_envs
-    #     self.test_eta = torch.Tensor(self.model.etas[0].numpy()).clone().detach()
-
-  # # Define training Loop
-  # def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 20):
-  #   n_train_envs = len(train_dataset)
-
-  #   self.model.train()
-
-  #   for t in tqdm(range(n_outer_loop)):
-
-  #     # update indivual etas
-  #     self.model.freeze_all_but_etas()
-  #     for env_ind in range(n_train_envs):
-  #       for _ in range(n_inner_loop):
-  #         loss = 0
-  #         batch_num = 0
-  #         for x, y in batchify(train_dataset[env_ind], batch_size):
-  #           batch_num += 1
-  #           f_beta, f_eta, _ = self.model(x, env_ind)
-  #           if self.causal_dir:
-  #             hsic_loss = HSICLoss(f_beta, f_eta)
-  #             loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-  #             # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
-  #           else:
-  #             f_concat = torch.concat([f_beta, f_eta], axis=1)
-  #             f_size = f_concat.shape[0]
-  #             reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
-
-  #             # hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-  #             loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
-  #             # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-  #           # print(loss.item())
-
-  #         self.inner_optimizer.zero_grad()
-  #         loss.backward()
-  #         self.inner_optimizer.step()
-
-  #     # update phi
-  #     self.model.freeze_all_but_phi()
-  #     phi_loss = 0
-  #     for env_ind in range(n_train_envs):
-  #       for x, y in batchify(train_dataset[env_ind], batch_size):
-  #         f_beta, f_eta, _ = self.model(x, env_ind)
-  #         phi_loss += self.criterion(f_beta + f_eta, y) + self.criterion(f_beta, y)
-
-  #     self.outer_optimizer.zero_grad()
-  #     phi_loss.backward()
-  #     self.outer_optimizer.step()
-
-  #     if t % 10 == 0 and self.config.verbose:
-  #       print(phi_loss.item()/(n_train_envs*batch_size))
-
-  #   if self.causal_dir:
-  #     with torch.no_grad():
-  #       for i in range(1, n_train_envs):
-  #         self.model.etas[0] += self.model.etas[i]
-  #       self.model.etas[0] /= n_train_envs
-  #       self.test_eta = torch.Tensor(self.model.etas[0].numpy()).clone().detach()
-
   def test(self, test_dataset, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])
     self.model.eval()
@@ -161,18 +97,11 @@ class AdaptiveInvariantNNTrainer():
         print(f"Bse Test loss {base_loss.item()/batch_num}, " + f"Bse Var {base_var.item()/batch_num}")
         print(f"Test loss {loss.item()/batch_num} " + f"Test Var {var.item()/batch_num}")
     
-    if self.causal_dir:
-      return base_loss.item()/batch_num, loss.item()/batch_num
-    else:
-      return base_loss.item()/batch_num, loss.item()/batch_num
+    return base_loss.item()/batch_num, loss.item()/batch_num
 
   def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = False):
-    if True: #not self.causal_dir:
-      self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
-      self.model.set_etas_to_zeros()
-    else:
-      self.model.freeze_all()
-      self.model.etas[0].copy_(self.test_eta)
+    self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
+    self.model.set_etas_to_zeros()
       
     if self.causal_dir:
       M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)

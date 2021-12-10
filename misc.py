@@ -80,6 +80,8 @@ def GaussianKernelMatrix(x, sigma=1):
     pairwise_distances_ = pairwise_distances(x)
     return torch.exp(-pairwise_distances_ /sigma)
 
+def LinearKernelMatrix(x):
+  return torch.mm(x,x.t())
 
 def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
     m,_ = x.shape #batch size
@@ -94,17 +96,29 @@ def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
       HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
       return HSIC
 
-def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, cuda=False):
-  m,_ = x.shape #batch size
-  assert(s_z == 1)
-  x_dd = torch.cat((x, z), dim=1)
-  
-  Simga_xdd_y = HSICLoss(x_dd, y, s_x + s_z, s_y, return_matrix = True)
-  Sigma_xdd_z = HSICLoss(x_dd, z, s_x + s_z, s_z, return_matrix = True)
-  Sigma_z_z = HSICLoss(z, z, s_z, s_z, return_matrix = True)
-  Sigma_z_y = HSICLoss(z, y, s_z, s_y, return_matrix = True)
+def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-5, cuda=False):
+  n,_ = x.shape #batch size
 
-  HSIC = torch.trace(Simga_xdd_y - Sigma_xdd_z @ Sigma_z_y / (Sigma_z_z + 1e-5))/((m-1)**2)
+  Gx = GaussianKernelMatrix(x,s_x)
+  Gy = GaussianKernelMatrix(y,s_x)
+  Gz = GaussianKernelMatrix(z,s_z)
+  Gx_tilde = Gx * Gz
+  Gy_tilde = Gy * Gz
+  Rz = Gz @ torch.inverse(Gz + n * epsilon * torch.eye(n))
+  HSIC = torch.trace(Gx_tilde @ Gy_tilde - 2 * Gx_tilde @ Rz @ Gy_tilde + Gx_tilde @ Rz @ Gy_tilde @ Rz) / ((n-1)**2)
+
+  return HSIC
+
+def ConditionalLinearHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-5, cuda=False):
+  n,_ = x.shape #batch size
+
+  Gx = LinearKernelMatrix(x)
+  Gy = LinearKernelMatrix(y)
+  Gz = LinearKernelMatrix(z)
+  Gx_tilde = Gx * Gz
+  Gy_tilde = Gy * Gz
+  Rz = Gz @ torch.inverse(Gz + n * epsilon * torch.eye(n))
+  HSIC = torch.trace(Gx_tilde @ Gy_tilde - 2 * Gx_tilde @ Rz @ Gy_tilde + Gx_tilde @ Rz @ Gy_tilde @ Rz) / ((n-1)**2)
 
   return HSIC
 
