@@ -149,7 +149,37 @@ class CausalControlDataset(Envs):
    return self.phi_base(x[:,:self.d_x_z_perp])
 
   def phi_base(self, x):
-    # return np.sin(np.pi * x)
+    return x * x
+  
+  def phi_u(self, x):
+    return np.cos(np.pi * x) * x
+
+
+class AntiCausalControlDataset(Envs):
+  def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1):
+    super(AntiCausalControlDataset, self).__init__()
+    self.d_x_z_perp = d_x_z_perp
+    self.d_x_y_perp = d_x_y_perp
+    self.env_means = [0.8, 0.75, 0.7, 0.1]
+    self.num_total_envs = len(self.env_means)
+    self.num_train_evns = self.num_total_envs - 2
+    self.input_dim = self.d_x_z_perp + self.d_x_y_perp 
+
+  def sample_envs(self, env_ind, n = 100):
+    # y = np.random.randn(n, 1)
+    y = 2*np.random.binomial(1, 0.5, (n,1))-1
+    factor = np.random.binomial(1, 0.9, (n,1))
+    x_z_perp = y * factor + (- y) * (1-factor)
+    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    z = y * factor + (- y) * (1-factor)
+    x_y_perp = z
+
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
+  
+  def sample_base_classifer(self, x):
+   raise Exception("This does not work")
+
+  def phi_base(self, x):
     return x * x
   
   def phi_u(self, x):

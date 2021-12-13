@@ -20,7 +20,7 @@ import csv
 
 import matplotlib.pyplot as plt
 
-from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset
+from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset, AntiCausalControlDataset
 from dataset.bike_env import BikeSharingDataset
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
@@ -80,7 +80,8 @@ if __name__ == '__main__':
       env = CausalControlDataset()
     if args.causal_dir_syn == "anti":
       print("Sampling from causal anti datasets")
-      env = AntiCausal()
+      # env = AntiCausal()
+      env = AntiCausalControlDataset()
 
     args.n_envs = env.num_train_evns
 
