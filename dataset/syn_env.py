@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import math
 from torch.autograd import Variable
+from misc import HSICLoss
 
 # generating data
 class Envs(object):
@@ -122,3 +123,37 @@ class AntiCausal(CausalAdditiveNoSpurious):
 
   def sample_base_classifer(self, x):
     raise Exception("This does not work")
+
+
+class CausalControlDataset(Envs):
+  def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1):
+    super(CausalControlDataset, self).__init__()
+    self.d_x_z_perp = d_x_z_perp
+    self.d_x_y_perp = d_x_y_perp
+    self.env_means = [0.95, 0.8, 0.7, 0.1]
+    self.num_total_envs = len(self.env_means)
+    self.num_train_evns = self.num_total_envs - 2
+    self.input_dim = self.d_x_z_perp + self.d_x_y_perp 
+
+  def sample_envs(self, env_ind, n = 100):
+    u = np.random.randn(n, 1)
+    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    z = u * factor + (- u) * (1-factor)
+    x_z_perp = np.random.randn(n, 1)
+    x_y_perp = z
+    y = self.phi_base(x_z_perp) + u + np.random.randn(n, 1) * 0.1
+
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
+  
+  def sample_base_classifer(self, x):
+   return self.phi_base(x[:,:self.d_x_z_perp])
+
+  def phi_base(self, x):
+    # return np.sin(np.pi * x)
+    return x * x
+  
+  def phi_u(self, x):
+    return np.cos(np.pi * x) * x
+
+if __name__ == '__main__':
+  env = CausalControlDataset()

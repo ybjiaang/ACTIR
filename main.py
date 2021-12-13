@@ -20,7 +20,7 @@ import csv
 
 import matplotlib.pyplot as plt
 
-from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal
+from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset
 from dataset.bike_env import BikeSharingDataset
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
@@ -30,7 +30,7 @@ from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
-from misc import fine_tunning_test
+from misc import fine_tunning_test, BaseLoss
 
 if __name__ == '__main__':
   # torch.manual_seed(0)
@@ -42,7 +42,7 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
+  parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
 
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
@@ -76,7 +76,8 @@ if __name__ == '__main__':
   if args.dataset == "syn":
     if args.causal_dir_syn == "causal":
       print("Sampling from causal synthetic datasets")
-      env = CausalAdditiveNoSpurious()
+      # env = CausalAdditiveNoSpurious()
+      env = CausalControlDataset()
     if args.causal_dir_syn == "anti":
       print("Sampling from causal anti datasets")
       env = AntiCausal()
@@ -108,11 +109,9 @@ if __name__ == '__main__':
     phi_odim = args.phi_odim
 
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 8),
+              nn.Linear(input_dim, 3),
               nn.ReLU(),
-              nn.Linear(8, 16),
-              nn.ReLU(),
-              nn.Linear(16, phi_odim)
+              nn.Linear(3, phi_odim)
           )
 
   if args.dataset == "bike":

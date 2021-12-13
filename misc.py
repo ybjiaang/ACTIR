@@ -122,8 +122,19 @@ def ConditionalLinearHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-5, cu
 
   return HSIC
 
-  
+def BaseLoss(test_dataset, env, criterion, batch_size):
+    loss = 0
+    batch_num = 0
+    
+    for x, y in batchify(test_dataset, batch_size):
+      f_beta = env.sample_base_classifer(x)
 
+      loss += criterion(f_beta, y) 
+      batch_num += 1
+
+    print(f"Bse Test loss {loss.item()/batch_num} ")
+    return loss.item()/batch_num
+  
 def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fine_tune_points = 1, test_unlabelled_dataset = None, run_proj_gd = False):
   # Finetuning tests
   finetuned_loss = 0.0

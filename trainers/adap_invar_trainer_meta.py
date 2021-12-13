@@ -18,7 +18,7 @@ class AdaptiveInvariantNNTrainerMeta():
     # optimizer
     self.model.freeze_all_but_etas()
     self.fast_update_lr = 1e-2
-    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
     self.model.freeze_all_but_phi()
     self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
@@ -36,8 +36,8 @@ class AdaptiveInvariantNNTrainerMeta():
 
     self.model.freeze_all_but_beta()
     loss_query = 0
-    parameter_to_update = [self.model.etas[self.eta_test_ind]]
     for env_ind in range(n_train_envs):
+      parameter_to_update = [self.model.etas[env_ind]]
       x, y = train_batch[env_ind]
       x_query, y_query = train_query_batch[env_ind]
       loss = self.inner_loss(x, y, env_ind, parameter_to_update)
@@ -53,13 +53,13 @@ class AdaptiveInvariantNNTrainerMeta():
       f_beta, f_eta, _ = self.model(x_query, env_ind, fast_eta = fast_weights)
       loss_query += self.criterion(f_beta + f_eta, y_query) + self.criterion(f_beta, y_query)
 
-      loss_query = loss_query / n_train_envs
+    loss_query = loss_query / n_train_envs
 
-      self.outer_optimizer.zero_grad()
-      loss_query.backward()
-      self.outer_optimizer.step()
+    self.outer_optimizer.zero_grad()
+    loss_query.backward()
+    self.outer_optimizer.step()
 
-      return loss_query
+    return loss_query
 
   # Define training Loop
   def train(self, train_dataset, batch_size, n_outer_loop = 100):
@@ -86,12 +86,8 @@ class AdaptiveInvariantNNTrainerMeta():
       loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
       # loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
     else:
-      f_concat = torch.concat([f_beta, f_eta], axis=1)
-      f_size = f_concat.shape[0]
-      reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
-
-			# hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
+      hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
     
     return loss
 

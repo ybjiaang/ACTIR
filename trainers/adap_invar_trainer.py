@@ -38,8 +38,8 @@ class AdaptiveInvariantNNTrainer():
       for train in env_batchify(train_dataset, batch_size):
         self.model.freeze_all_but_etas()
         for _ in range(n_inner_loop):
-          loss = 0
           for env_ind in range(n_train_envs):
+            loss = 0
             x, y = train[env_ind]
             f_beta, f_eta, _ = self.model(x, env_ind)
             if self.causal_dir:
@@ -54,12 +54,10 @@ class AdaptiveInvariantNNTrainer():
               hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
               # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
               loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-            # print(loss.item())
 
-          self.inner_optimizer.zero_grad()
-          loss.backward()
-          self.inner_optimizer.step()
-
+            self.inner_optimizer.zero_grad()
+            loss.backward()
+            self.inner_optimizer.step()
 
         # update phi
         self.model.freeze_all_but_phi()
