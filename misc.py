@@ -1,3 +1,4 @@
+from matplotlib.pyplot import axes, axis
 import numpy as np
 import torch 
 
@@ -96,29 +97,41 @@ def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
       HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
       return HSIC
 
-def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-5, cuda=False):
+def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-6, cuda=False):
   n,_ = x.shape #batch size
 
-  Gx = GaussianKernelMatrix(x,s_x)
-  Gy = GaussianKernelMatrix(y,s_x)
-  Gz = GaussianKernelMatrix(z,s_z)
-  Gx_tilde = Gx * Gz
-  Gy_tilde = Gy * Gz
-  Rz = Gz @ torch.inverse(Gz + n * epsilon * torch.eye(n))
-  HSIC = torch.trace(Gx_tilde @ Gy_tilde - 2 * Gx_tilde @ Rz @ Gy_tilde + Gx_tilde @ Rz @ Gy_tilde @ Rz) / ((n-1)**2)
+  Kx = GaussianKernelMatrix(x,s_x)
+  Ky = GaussianKernelMatrix(y,s_y)
+  Kz = GaussianKernelMatrix(z,s_z)
+  Gx_tilde = Centering_GramMatrix(Kx * Kz)
+  Gy_tilde = Centering_GramMatrix(Ky * Kz)
+  Rx_tilde = Gx_tilde @ torch.inverse(Gx_tilde + n * epsilon * torch.eye(n))
+  Ry_tilde = Gy_tilde @ torch.inverse(Gy_tilde + n * epsilon * torch.eye(n))
+  G_z_center = Centering_GramMatrix(Kz)
+  Rz = G_z_center @ torch.inverse(G_z_center + n * epsilon * torch.eye(n))
+  HSIC = torch.trace(Ry_tilde @ Rx_tilde - 2.0 * Ry_tilde @ Rx_tilde @ Rz+ Ry_tilde @ Rz @ Rx_tilde @ Rz) 
 
   return HSIC
+
+def Centering_GramMatrix(K_n):
+  n, _ = K_n.shape #batch size
+  H = 1.0/n * torch.ones((n,n))
+  return K_n - H @ K_n - K_n @ H + H @ K_n @ H
+
 
 def ConditionalLinearHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-5, cuda=False):
   n,_ = x.shape #batch size
 
-  Gx = LinearKernelMatrix(x)
-  Gy = LinearKernelMatrix(y)
-  Gz = LinearKernelMatrix(z)
-  Gx_tilde = Gx * Gz
-  Gy_tilde = Gy * Gz
-  Rz = Gz @ torch.inverse(Gz + n * epsilon * torch.eye(n))
-  HSIC = torch.trace(Gx_tilde @ Gy_tilde - 2 * Gx_tilde @ Rz @ Gy_tilde + Gx_tilde @ Rz @ Gy_tilde @ Rz) / ((n-1)**2)
+  Kx = LinearKernelMatrix(x)
+  Ky = LinearKernelMatrix(y)
+  Kz = LinearKernelMatrix(z)
+  Gx_tilde = Centering_GramMatrix(Kx * Kz)
+  Gy_tilde = Centering_GramMatrix(Ky * Kz)
+  Rx_tilde = Gx_tilde @ torch.inverse(Gx_tilde + n * epsilon * torch.eye(n))
+  Ry_tilde = Gy_tilde @ torch.inverse(Gy_tilde + n * epsilon * torch.eye(n))
+  G_z_center = Centering_GramMatrix(Kz)
+  Rz = G_z_center @ torch.inverse(G_z_center + n * epsilon * torch.eye(n))
+  HSIC = torch.trace(Ry_tilde @ Rx_tilde - 2.0 * Ry_tilde @ Rx_tilde @ Rz+ Ry_tilde @ Rz @ Rx_tilde @ Rz) 
 
   return HSIC
 

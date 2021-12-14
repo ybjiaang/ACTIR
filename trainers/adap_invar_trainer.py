@@ -17,11 +17,14 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
     self.model.freeze_all_but_phi()
     self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
+
+    # self.model.freeze_all_but_beta()
+    # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
 
@@ -44,20 +47,18 @@ class AdaptiveInvariantNNTrainer():
             f_beta, f_eta, _ = self.model(x, env_ind)
             if self.causal_dir:
               hsic_loss = HSICLoss(f_beta, f_eta)
-              loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+              loss += self.criterion(f_beta + f_eta, y) +self.reg_lambda * hsic_loss
               # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
             else:
-              # f_concat = torch.concat([f_beta, f_eta], axis=1)
-              # f_size = f_concat.shape[0]
-              # reg_loss = f_concat.T @ f_concat / f_size  - torch.mean(f_concat * y, dim=0, keepdim=True).T @ torch.mean(y * f_concat, dim=0, keepdim=True) / (torch.mean(y * y) + 1e-5)
-
               hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-              # loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(reg_loss[0, 1], 2)
               loss += self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
 
             self.inner_optimizer.zero_grad()
             loss.backward()
+            # for p in self.model.etas.parameters():
+            #   print(p.grad)
             self.inner_optimizer.step()
+            # print(self.criterion(f_beta + f_eta, y).item(), hsic_loss.item())
 
         # update phi
         self.model.freeze_all_but_phi()
