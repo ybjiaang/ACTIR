@@ -160,18 +160,18 @@ class AntiCausalControlDataset(Envs):
     super(AntiCausalControlDataset, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.8, 0.7, 0.7, 0.1]
+    self.env_means = [0.8, 0.6, 0.7, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp 
 
   def sample_envs(self, env_ind, n = 100):
-    # y = np.random.randn(n, 1)
-    y = 2*np.random.binomial(1, 0.5, (n,1))-1
+    y = np.random.randn(n, 1)
+    # y = 2*np.random.binomial(1, 0.5, (n,1))-1
     factor = np.random.binomial(1, 0.9, (n,1))
-    x_z_perp = y * factor + (- y) * (1-factor)
+    x_z_perp = self.phi_base(y) + np.random.randn(n, 1) * 0.1
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    z = y * factor + (- y) * (1-factor)
+    z = y * self.env_means[env_ind] + np.random.randn(n, 1) * 0.1
     x_y_perp = z
 
     return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y)
