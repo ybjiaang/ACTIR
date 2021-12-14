@@ -160,7 +160,7 @@ class AntiCausalControlDataset(Envs):
     super(AntiCausalControlDataset, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.8, 0.6, 0.7, 0.1]
+    self.env_means = [1.0, 2.0, 0.7, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp 
@@ -168,9 +168,9 @@ class AntiCausalControlDataset(Envs):
   def sample_envs(self, env_ind, n = 100):
     y = np.random.randn(n, 1)
     # y = 2*np.random.binomial(1, 0.5, (n,1))-1
-    factor = np.random.binomial(1, 0.9, (n,1))
+    # factor = np.random.binomial(1, 0.9, (n,1))
     x_z_perp = self.phi_base(y) + np.random.randn(n, 1) * 0.1
-    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    # factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
     z = y * self.env_means[env_ind] + np.random.randn(n, 1) * 0.1
     x_y_perp = z
 
