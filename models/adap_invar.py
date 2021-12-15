@@ -7,7 +7,7 @@ from tqdm import tqdm
 from misc import batchify
 
 class AdaptiveInvariantNN(nn.Module):
-  def __init__(self, n_batch_envs, input_dim, Phi):
+  def __init__(self, n_batch_envs, input_dim, Phi, out_dim=1):
     super(AdaptiveInvariantNN, self).__init__()
 
     self.n_batch_envs = n_batch_envs
@@ -19,11 +19,12 @@ class AdaptiveInvariantNN(nn.Module):
     self.phi_odim = self.Phi[-1].out_features
     
     # Define \beta
-    self.beta = torch.nn.Parameter(torch.zeros(self.phi_odim, 1), requires_grad = False) 
-    self.beta[0,0] = 1.0
+    self.beta = torch.nn.Parameter(torch.zeros(self.phi_odim, out_dim), requires_grad = False) 
+    for i in range(out_dim):
+      self.beta[i,i] = 1.0
 
     # Define \eta
-    self.etas = nn.ParameterList([torch.nn.Parameter(torch.zeros(self.phi_odim, 1), requires_grad = True) for i in range(n_batch_envs)]) 
+    self.etas = nn.ParameterList([torch.nn.Parameter(torch.zeros(self.phi_odim, out_dim), requires_grad = True) for i in range(n_batch_envs)]) 
 
   def forward(self, x, env_ind, fast_eta = None):
     rep = self.Phi(x)

@@ -97,6 +97,31 @@ def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
       HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
       return HSIC
 
+def DiscreteConditionalHSICLoss(x, y, z, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
+  """ adapted https://github.com/nv-research-israel/causal_comp/blob/7b26f00bd7b28d0e4cb80147e2ce302ead5cde75/train.py#L329 """
+  if len(z.shape) > 1:
+    temp_z = torch.squeeze(z)
+  else:
+    temp_z = z
+  labels_in_batch_sorted, indices = torch.sort(temp_z)
+  unique_ixs = 1 + (labels_in_batch_sorted[1:] - labels_in_batch_sorted[:-1]).nonzero()
+  unique_ixs = [0] + unique_ixs.flatten().cpu().numpy().tolist() + [len(temp_z)]
+  
+  hisc_loss = 0
+  num_classes_calculated = 0
+  for j in range(len(unique_ixs)-1):
+    current_class_indices = unique_ixs[j], unique_ixs[j + 1]
+    count = current_class_indices[1] - current_class_indices[0]
+    if count < 2: 
+      continue
+    curr_class_slice = slice(*current_class_indices)
+    curr_class_indices = indices[curr_class_slice].sort()[0]
+
+    hisc_loss += HSICLoss(x[curr_class_indices, :], y[curr_class_indices, :])
+    num_classes_calculated += 1
+  
+  return hisc_loss/num_classes_calculated
+
 def ConditionalHSICLoss(x, y, z, s_x=1, s_y=1, s_z = 1, epsilon = 1e-6, cuda=False):
   n,_ = x.shape #batch size
 

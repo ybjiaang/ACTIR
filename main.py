@@ -42,7 +42,7 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
+  parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
@@ -142,9 +142,9 @@ if __name__ == '__main__':
     
   if args.dataset == "syn":
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 3),
+              nn.Linear(input_dim, 8),
               nn.ReLU(),
-              nn.Linear(3, phi_odim)
+              nn.Linear(8, phi_odim)
           )
 
   if args.dataset == "bike":
@@ -321,7 +321,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, out_dim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
     if args.print_base_graph:
@@ -365,7 +365,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, out_dim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:

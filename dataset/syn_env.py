@@ -160,21 +160,21 @@ class AntiCausalControlDataset(Envs):
     super(AntiCausalControlDataset, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.9, 0.7, 0.7, 0.1]
+    self.env_means = [0.8, 0.9, 0.7, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
     self.num_class = 2
 
   def sample_envs(self, env_ind, n = 100):
-    y = 2*np.random.binomial(1, 0.5, (n,1))-1
-    factor = np.random.binomial(1, 0.8, (n,1))
-    x_z_perp = y * (2* factor - 1)
+    y = np.random.binomial(1, 0.5, (n,1))
+    factor = np.random.binomial(1, 0.75, (n,1))
+    x_z_perp = (2*y - 1) * (2* factor - 1)
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    z = y * (2* factor - 1)
+    z = (2*y - 1) * (2* factor - 1)
     x_y_perp = z
 
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.squeeze(((torch.Tensor(y) + 1)/2).long())
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")
