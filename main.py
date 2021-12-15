@@ -47,6 +47,7 @@ if __name__ == '__main__':
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
   parser.add_argument('--compare_all_invariant_models', action='store_true', help='compare all invariant models')
+  parser.add_argument('--classification', action='store_true', help='if the tast is classification, set this flag to enable correct prediction, labels has to be between [0, ..., n]')
 
   # finetune
   parser.add_argument('--run_fine_tune_test', action='store_true', help='run finetunning tests')
@@ -105,16 +106,6 @@ if __name__ == '__main__':
     x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
 
-    # model of phi (used by all models)
-    input_dim = env.input_dim
-    phi_odim = args.phi_odim
-
-    Phi = nn.Sequential(
-              nn.Linear(input_dim, 3),
-              nn.ReLU(),
-              nn.Linear(3, phi_odim)
-          )
-
   if args.dataset == "bike":
     print("bikesharing dataset")
     env = BikeSharingDataset(test_season=args.bike_test_season, year=args.bike_year)
@@ -134,8 +125,28 @@ if __name__ == '__main__':
     # create test dataset
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
-    input_dim = env.input_dim
-    phi_odim = args.phi_odim 
+  # loss fn
+  if args.classification:
+    criterion = torch.nn.CrossEntropyLoss()
+  else:
+    criterion = torch.nn.MSELoss(reduction='mean')
+
+  # define models
+  input_dim = env.input_dim
+  phi_odim = args.phi_odim
+  if args.classification:
+    out_dim = env.num_class
+  else:
+    out_dim = 1
+    
+  if args.dataset == "syn":
+    Phi = nn.Sequential(
+              nn.Linear(input_dim, 3),
+              nn.ReLU(),
+              nn.Linear(3, phi_odim)
+          )
+
+  if args.dataset == "bike":
     Phi = nn.Sequential(
               nn.Linear(input_dim, 8),
               nn.ReLU(),
@@ -143,10 +154,7 @@ if __name__ == '__main__':
               nn.ReLU(),
               nn.Linear(16, phi_odim)
           )
-
-  # loss fn
-  criterion = torch.nn.MSELoss(reduction='mean')
-
+    
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi).to(args.device)
@@ -228,7 +236,7 @@ if __name__ == '__main__':
 
   """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
     trainer = ERM(model, criterion, args)
     
     if args.print_base_graph:

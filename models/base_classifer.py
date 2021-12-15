@@ -4,7 +4,7 @@ from torch import nn
 import copy
 
 class BaseClass(nn.Module):
-  def __init__(self, input_dim, Phi):
+  def __init__(self, input_dim, Phi, out_dim=1):
     super(BaseClass, self).__init__()
 
     self.input_dim = input_dim
@@ -15,8 +15,9 @@ class BaseClass(nn.Module):
     self.phi_odim = self.Phi[-1].out_features
     
     # Define \beta
-    init_beta_numpy = np.zeros((self.phi_odim, 1))
-    init_beta_numpy[0,0] = 1.0
+    init_beta_numpy = np.zeros((self.phi_odim, out_dim))
+    for i in range(out_dim):
+      init_beta_numpy[i,i] = 1.0
     init_beta = torch.Tensor(init_beta_numpy)
     self.beta = torch.nn.Parameter(init_beta)
 

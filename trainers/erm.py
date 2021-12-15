@@ -10,6 +10,7 @@ class ERM():
   def __init__(self, model, loss_fn, config):
     self.model = copy.deepcopy(model)
     self.config = config
+    self.classification = self.config.classification
 
     # define loss
     self.criterion = loss_fn
@@ -35,24 +36,24 @@ class ERM():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
+    
       if t % 10 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))
 
-  
   def test(self, test_dataset, batch_size = 32):
     
     self.model.eval()
     loss = 0
-    batch_num = 0
-    base_var = 0
+    total = 0
     
     for x, y in batchify(test_dataset, batch_size):
       f_beta, _ = self.model(x)
+      if self.classification:
+        _, predicted = torch.max(f_beta.data, 1)
+        loss += (predicted == y).sum()
+      else:
+        loss += self.criterion(f_beta, y) * y.size(0) 
 
-      loss += self.criterion(f_beta, y) 
-      base_var += torch.var(f_beta - y, unbiased=False)
-      batch_num += 1
-
-    print(f"Bse Test loss {loss.item()/batch_num} " + f"Bse Var {base_var.item()/batch_num}")
-    return loss.item()/batch_num
+      total += y.size(0)
+    print(f"Bse Test Error {loss.item()/total} ")
+    return loss.item()/total
