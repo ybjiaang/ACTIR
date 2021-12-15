@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
     trainer = LinearMAML(model, criterion, args)
 
     if args.print_base_graph:

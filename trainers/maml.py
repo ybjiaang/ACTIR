@@ -11,6 +11,7 @@ class LinearMAML():
   def __init__(self, model, loss_fn, config):
     self.model = copy.deepcopy(model)
     self.config = config
+    self.classification = self.config.classification
 
     # define loss
     self.criterion = loss_fn
@@ -68,7 +69,7 @@ class LinearMAML():
     return loss.item()
 
   
-  def test(self, test_dataset, batch_size = 32, input_model = None, print_flag = True):
+  def test(self, test_dataset, batch_size = 32, input_model = None, print_flag=True):
     
     fast_weights = None
     test_model = self.model
@@ -77,20 +78,21 @@ class LinearMAML():
 
     test_model.eval()
     loss = 0
-    batch_num = 0
-    base_var = 0
+    total = 0
     
     for x, y in batchify(test_dataset, batch_size):
       f_beta, _ = test_model(x, fast_beta = fast_weights)
       
-      loss += self.criterion(f_beta, y) 
-      base_var += torch.var(f_beta - y, unbiased=False)
-      batch_num += 1
-      
+      if self.classification:
+        _, predicted = torch.max(f_beta.data, 1)
+        loss += (predicted == y).sum()
+      else:
+        loss += self.criterion(f_beta, y) * y.size(0) 
+
+      total += y.size(0)
     if print_flag:
-      print(f"Bse Test loss {loss.item()/batch_num} " + f"Bse Var {base_var.item()/batch_num}")
-    
-    return loss.item()/batch_num
+      print(f"Bse Test Error {loss.item()/total} ") 
+    return loss.item()/total
 
 
   def finetune_test(self, test_finetune_dataset, batch_size = 32):
