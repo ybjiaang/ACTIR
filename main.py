@@ -136,6 +136,7 @@ if __name__ == '__main__':
   phi_odim = args.phi_odim
   if args.classification:
     out_dim = env.num_class
+    args.num_class = env.num_class
   else:
     out_dim = 1
     
@@ -196,7 +197,7 @@ if __name__ == '__main__':
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
     trainer = IRM(model, criterion, args)
 
     if args.print_base_graph:

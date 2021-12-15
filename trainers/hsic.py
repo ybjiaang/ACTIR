@@ -11,10 +11,12 @@ class HSIC():
   def __init__(self, model, loss_fn, config):
     self.model = copy.deepcopy(model)
     self.config = config
+    self.classification = self.config.classification
+    self.num_class = config.num_class
 
     # define loss
     self.criterion = loss_fn
-
+    
     # optimizer
     self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
 
@@ -52,18 +54,21 @@ class HSIC():
     self.bias_adjustment /= total_num_y
 
   def test(self, test_dataset, batch_size = 32):
-    # print(self.model.etas[0])
     self.model.eval()
     loss = 0
-    batch_num = 0
-    base_var = 0
+    total = 0
     
     for x, y in batchify(test_dataset, batch_size):
       f_beta, _ = self.model(x)
 
-      loss += self.criterion(f_beta + self.bias_adjustment, y) 
-      base_var += torch.var(f_beta - y, unbiased=False)
-      batch_num += 1
+      if self.classification:
+        predicted = (torch.squeeze(torch.clamp(f_beta.data, min = 0, max=self.num_class-1) + 0.5) ).int().long()
+        loss += (predicted == y).sum()
+      else:
+        loss += self.criterion(f_beta, y) * y.size(0) 
 
-    print(f"Bse Test loss {loss.item()/batch_num} " + f"Bse Var {base_var.item()/batch_num}")
-    return loss.item()/batch_num
+      total += y.size(0)
+
+    print(f"Bse Test Error {loss.item()/total} ")
+    return loss.item()/total
+
