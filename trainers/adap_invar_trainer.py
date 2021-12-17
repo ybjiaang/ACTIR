@@ -19,7 +19,7 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
+    self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
     self.model.freeze_all_but_phi()
@@ -29,7 +29,7 @@ class AdaptiveInvariantNNTrainer():
     # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
-    self.gamma = 0.1
+    self.gamma = 0.9
     # during test, use the first eta
     self.eta_test_ind = 0
 
@@ -37,15 +37,17 @@ class AdaptiveInvariantNNTrainer():
     f_beta, f_eta, _ = self.model(x, env_ind)
     if self.classification:
       if self.causal_dir:
-        reg_loss = 0
-        for i in range(self.num_class):
-          reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
-        # reg_loss = HSICLoss(f_beta, f_eta)
+        # reg_loss = 0
+        # for i in range(self.num_class):
+        #   reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
+        reg_loss = HSICLoss(f_beta, f_eta)
       else:
-        reg_loss = 0
-        for i in range(self.num_class):
-          reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
-        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        # reg_loss = 0
+        # for i in range(self.num_class):
+        #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
+        reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        # print(reg_loss)
+        # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
       if self.causal_dir:
         reg_loss = HSICLoss(f_beta, f_eta)
@@ -53,12 +55,12 @@ class AdaptiveInvariantNNTrainer():
       else:
         reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
       
-    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
+    loss = self.reg_lambda * self.criterion(f_beta + f_eta, y) + reg_loss
 
     return loss
     
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 50):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 20):
     n_train_envs = len(train_dataset)
 
     self.model.train()
@@ -110,8 +112,8 @@ class AdaptiveInvariantNNTrainer():
         _, predicted = torch.max((f_beta + f_eta).data, 1)
         loss += (predicted == y).sum()
       else:
-        loss += self.criterion(f_beta + f_eta, y) 
-        base_loss += self.criterion(f_beta, y) 
+        loss += self.criterion(f_beta + f_eta, y) * y.size(0)
+        base_loss += self.criterion(f_beta, y) * y.size(0)
       total += y.size(0)
 
     if print_flag: 

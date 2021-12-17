@@ -139,6 +139,7 @@ if __name__ == '__main__':
     args.num_class = env.num_class
   else:
     out_dim = 1
+    args.num_class = 1
     
   if args.dataset == "syn":
     Phi = nn.Sequential(

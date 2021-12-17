@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import math
 from torch.autograd import Variable
-from misc import HSICLoss
+from misc import HSICLoss, DiscreteConditionalHSICLoss
 
 # generating data
 class Envs(object):
@@ -136,9 +136,9 @@ class CausalControlDataset(Envs):
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp 
 
   def sample_envs(self, env_ind, n = 100):
-    u = np.random.randn(n, 1)
+    u = np.random.randn(n, 1) 
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    z = u * factor + (- u) * (1-factor)
+    z = u * factor + (- u) * (1-factor) 
     x_z_perp = np.random.randn(n, 1)
     x_y_perp = z
     y = self.phi_base(x_z_perp) + u + np.random.randn(n, 1) * 0.1
@@ -173,7 +173,7 @@ class AntiCausalControlDataset(Envs):
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
     z = (2*y - 1) * (2* factor - 1)
     x_y_perp = z
-
+    
     return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
   
   def sample_base_classifer(self, x):

@@ -84,18 +84,25 @@ def GaussianKernelMatrix(x, sigma=1):
 def LinearKernelMatrix(x):
   return torch.mm(x,x.t())
 
-def HSICLoss(x, y, s_x=1, s_y=1, cuda=False, return_matrix = False):
-    m,_ = x.shape #batch size
-    K = GaussianKernelMatrix(x,s_x)
-    L = GaussianKernelMatrix(y,s_y)
-    H = torch.eye(m) - 1.0/m * torch.ones((m,m))
-    if cuda:
-      H = H.double().cuda() 
-    if return_matrix:
-      return torch.mm(L,torch.mm(H,torch.mm(K,H)))
-    else:
-      HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
-      return HSIC
+def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
+  m,_ = x.shape #batch size
+  K = GaussianKernelMatrix(x,s_x)
+  L = GaussianKernelMatrix(y,s_y)
+  H = torch.eye(m) - 1.0/m * torch.ones((m,m))
+  if cuda:
+    H = H.double().cuda() 
+  HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
+  return HSIC
+
+  # n,_ = x.shape #batch size
+  # Kx = GaussianKernelMatrix(x,s_x)
+  # Ky = GaussianKernelMatrix(y,s_y)
+  # Gx = Centering_GramMatrix(Kx)
+  # Gy = Centering_GramMatrix(Ky)
+  # Rx = Gx @ torch.inverse(Gx + n * epsilon * torch.eye(n))
+  # Ry = Gy @ torch.inverse(Gy + n * epsilon * torch.eye(n))
+  # HSIC = torch.trace(Rx @ Ry)
+  # return HSIC
 
 def DiscreteConditionalHSICLoss(x, y, z, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
   """ adapted https://github.com/nv-research-israel/causal_comp/blob/7b26f00bd7b28d0e4cb80147e2ce302ead5cde75/train.py#L329 """
