@@ -1,7 +1,7 @@
 import pandas as pd
 import glob, os
 
-dir = "./log_syn_anti"
+dir = "./log_syn"
 os.chdir(dir)
 for file in glob.glob("*.csv"):
     print(file)
