@@ -2,6 +2,10 @@ from matplotlib.pyplot import axes, axis
 import numpy as np
 import torch 
 
+def printModelParam(model):
+  for name, param in model.named_parameters():
+    print(name, param.data)
+
 def batchify(dataset, batch_size):
   x, y = dataset
   total_length = x.shape[0]

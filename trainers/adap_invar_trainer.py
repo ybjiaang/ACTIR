@@ -4,7 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify, HSICLoss, ConditionalHSICLoss, env_batchify, DiscreteConditionalHSICLoss, SampleCovariance
+from misc import batchify, HSICLoss, ConditionalHSICLoss, env_batchify, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
 class AdaptiveInvariantNNTrainer():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -19,7 +19,10 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    self.inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
+    self.adam_inner_optimizers = []
+    for i in range(len(self.model.etas)):
+      self.adam_inner_optimizers.append(torch.optim.Adam([self.model.etas[i]],lr=1e-2))
+    # self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
     self.model.freeze_all_but_phi()
@@ -56,7 +59,7 @@ class AdaptiveInvariantNNTrainer():
       else:
         reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
       
-    loss = self.reg_lambda * self.criterion(f_beta + f_eta, y) + reg_loss
+    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
     # print("check loss seperately")
     # print(self.criterion(f_beta + f_eta, y).item())
     # print(reg_loss.item())
@@ -73,20 +76,32 @@ class AdaptiveInvariantNNTrainer():
     for t in tqdm(range(n_outer_loop)):
       for train in env_batchify(train_dataset, batch_size):
         self.model.freeze_all_but_etas()
+        # print("----------")
         for env_ind in range(n_train_envs):
+          # print(env_ind)
+          # print(0, self.model.etas[0])
+          # print(1, self.model.etas[1])
+          # printModelParam(self.model.Phi)
           for k in range(n_inner_loop):
             x, y = train[env_ind]
 
             loss = self.inner_loss(x, y, env_ind)
-            self.inner_optimizer.zero_grad()
+            self.adam_inner_optimizers[env_ind].zero_grad()
             loss.backward()
             # for p in self.model.etas.parameters():
             #   print(p.grad)
-            self.inner_optimizer.step()
+            self.adam_inner_optimizers[env_ind].step()
             # if k % 10 == 0:
             #   print("inner loss")
             #   print(env_ind, loss.item())
+          # print(0, self.model.etas[0])
+          # print(1, self.model.etas[1])
+          # printModelParam(self.model.Phi)
 
+        # print("-----inner loop finished--------")
+        # print(0, self.model.etas[0])
+        # print(1, self.model.etas[1])
+        # printModelParam(self.model.Phi)
         # update phi
         self.model.freeze_all_but_phi()
         phi_loss = 0
@@ -98,7 +113,10 @@ class AdaptiveInvariantNNTrainer():
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
-
+        # print(0, self.model.etas[0])
+        # print(1, self.model.etas[1])
+        # printModelParam(self.model.Phi)
+        # print("--------------------------------")
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 
