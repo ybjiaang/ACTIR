@@ -68,7 +68,7 @@ class AdaptiveInvariantNNTrainer():
     return loss
     
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 20):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
     n_train_envs = len(train_dataset)
 
     self.model.train()
