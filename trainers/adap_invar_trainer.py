@@ -4,7 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify, HSICLoss, ConditionalHSICLoss, env_batchify, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
+from misc import batchify, HSICLoss, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
 class AdaptiveInvariantNNTrainer():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -32,9 +32,11 @@ class AdaptiveInvariantNNTrainer():
     # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
-    self.gamma = 0.7
+    self.gamma = config.gamma
     # during test, use the first eta
     self.eta_test_ind = 0
+
+    self.softmax = nn.Softmax(dim=1)
 
   def inner_loss(self, x, y, env_ind):
     f_beta, f_eta, _ = self.model(x, env_ind)
@@ -53,11 +55,13 @@ class AdaptiveInvariantNNTrainer():
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
       if self.causal_dir:
-        reg_loss = HSICLoss(f_beta, f_eta)
-        # reg_loss = torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+        reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
+        # reg_loss = torch.pow(torch.mean(f_beta * f_eta), 2) +  torch.mean(f_eta * f_eta)
         # reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
       else:
-        reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+        # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y)
       
     loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
     # print("check loss seperately")

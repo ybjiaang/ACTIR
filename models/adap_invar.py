@@ -7,11 +7,12 @@ from tqdm import tqdm
 from misc import batchify
 
 class AdaptiveInvariantNN(nn.Module):
-  def __init__(self, n_batch_envs, input_dim, Phi, out_dim=1):
+  def __init__(self, n_batch_envs, input_dim, Phi, config, out_dim=1):
     super(AdaptiveInvariantNN, self).__init__()
 
     self.n_batch_envs = n_batch_envs
     self.input_dim = input_dim
+    self.classification = config.classification
     
     # Define \Phi
     self.Phi = copy.deepcopy(Phi)

@@ -41,7 +41,8 @@ if __name__ == '__main__':
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 10, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 8, help='Phi output size')
 
   # different models
@@ -67,6 +68,7 @@ if __name__ == '__main__':
   parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
   parser.add_argument('--verbose', action='store_true', help='verbose or not')
   parser.add_argument('--cvs_dir', type=str, default= "./test.cvs", help='path to the cvs file')
+  parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -322,7 +324,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, out_dim).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
     if args.print_base_graph:
@@ -348,6 +350,12 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
+    if args.hyper_param_tuning:
+      with open(args.cvs_dir, 'a', newline='') as file: 
+        writer = csv.writer(file)
+        row = [args.reg_lambda, args.gamma, adp_invar_anti_causal_base_loss]
+        writer.writerow(row)
+
     if args.print_base_graph: 
       # check if the base classifer match after training
       with torch.no_grad(): 
@@ -366,7 +374,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, out_dim).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:

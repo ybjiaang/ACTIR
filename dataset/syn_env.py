@@ -160,7 +160,7 @@ class AntiCausalControlDataset(Envs):
     super(AntiCausalControlDataset, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.8, 0.9, 0.7, 0.1]
+    self.env_means = [0.9, 0.8, 0.7, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
@@ -174,7 +174,7 @@ class AntiCausalControlDataset(Envs):
     z = (2*y - 1) * (2* factor - 1)
     x_y_perp = z
     
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y) #torch.squeeze(torch.Tensor(y).long())
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")
@@ -186,4 +186,4 @@ class AntiCausalControlDataset(Envs):
     return np.cos(np.pi * x) * x
 
 if __name__ == '__main__':
-  env = CausalControlDataset()
+  env = AntiCausalControlDataset()

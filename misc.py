@@ -116,6 +116,31 @@ def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
   HSIC = torch.trace(Rx @ Ry)
   return HSIC
 
+def DiscreteConditionalExpecationTest(x, y, z):
+  n, _ = x.shape
+  if len(z.shape) > 1:
+    temp_z = z[:,0]
+  else:
+    temp_z = z
+    
+  labels_in_batch_sorted, indices = torch.sort(temp_z)
+  unique_ixs = 1 + (labels_in_batch_sorted[1:] - labels_in_batch_sorted[:-1]).nonzero()
+  unique_ixs = [0] + unique_ixs.flatten().cpu().numpy().tolist() + [len(temp_z)]
+
+  estimate = 0
+  for j in range(len(unique_ixs)-1):
+    current_class_indices = unique_ixs[j], unique_ixs[j + 1]
+    count = current_class_indices[1] - current_class_indices[0]
+    if count < 2: 
+      continue
+    curr_class_slice = slice(*current_class_indices)
+    curr_class_indices = indices[curr_class_slice].sort()[0]
+
+    y_cond_z = torch.mean(y[curr_class_indices, :], dim=0, keepdim=True)
+    estimate += torch.sum(x[curr_class_indices, :] * (y[curr_class_indices, :] - y_cond_z), dim=0)
+  
+  return estimate/n
+
 def DiscreteConditionalHSICLoss(x, y, z, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
   """ adapted https://github.com/nv-research-israel/causal_comp/blob/7b26f00bd7b28d0e4cb80147e2ce302ead5cde75/train.py#L329 """
   if len(z.shape) > 1:
