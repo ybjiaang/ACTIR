@@ -61,9 +61,10 @@ class AdaptiveInvariantNNTrainer():
       else:
         # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y)
+        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y)
+        reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
       
-    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
+    loss = self.reg_lambda * self.criterion(f_beta + f_eta, y) + reg_loss
     # print("check loss seperately")
     # print(self.criterion(f_beta + f_eta, y).item())
     # print(reg_loss.item())
@@ -72,7 +73,7 @@ class AdaptiveInvariantNNTrainer():
     return loss
     
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 50):
     n_train_envs = len(train_dataset)
 
     self.model.train()

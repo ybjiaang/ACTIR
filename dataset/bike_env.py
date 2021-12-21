@@ -13,7 +13,7 @@ class BikeSharingDataset(object):
         super(BikeSharingDataset, self).__init__()
         self.cvs_dir = cvs_dir
         self.num_total_envs = 4
-        self.num_train_evns = 3
+        self.num_train_evns = 2
         self.test_season = test_season
         self.test_finetune_size = test_finetune_size
         self.test_unlabled_size = test_unlabled_size
@@ -23,7 +23,7 @@ class BikeSharingDataset(object):
         self.input_dim = self.test_data[0].shape[1]
 
     def read_files(self):
-        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'holiday', 'weekday', 'workingday', 'temp', 'casual'])
+        data= pd.read_csv(self.cvs_dir, usecols = ['season', 'yr', 'holiday', 'weekday', 'workingday', 'windspeed', 'casual'])
         data_array = data.to_numpy()
         self.train_data_by_season = []
         self.val_data_by_season = []

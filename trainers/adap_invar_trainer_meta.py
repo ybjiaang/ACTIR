@@ -4,7 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 
-from misc import batchify, HSICLoss, ConditionalHSICLoss, maml_batchify
+from misc import batchify, HSICLoss, ConditionalHSICLoss, maml_batchify, DiscreteConditionalHSICLoss, DiscreteConditionalExpecationTest
 
 class AdaptiveInvariantNNTrainerMeta():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -81,13 +81,30 @@ class AdaptiveInvariantNNTrainerMeta():
 
   def inner_loss(self, x, y, env_ind, fast_weight=None):
     f_beta, f_eta, _ = self.model(x, env_ind, fast_eta=fast_weight)
-    if self.causal_dir:
-      hsic_loss = HSICLoss(f_beta, f_eta)
-      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
-      # loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * torch.pow(torch.mean(f_beta * f_eta), 2) # + 0.1 * torch.mean(f_eta * f_eta)
+    if self.classification:
+      if self.causal_dir:
+        # reg_loss = 0
+        # for i in range(self.num_class):
+        #   reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
+        reg_loss = HSICLoss(f_beta, f_eta)
+      else:
+        # reg_loss = 0
+        # for i in range(self.num_class):
+        #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
+        reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        # print(reg_loss)
+        # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
-      hsic_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-      loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * hsic_loss
+      if self.causal_dir:
+        reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
+        # reg_loss = torch.pow(torch.mean(f_beta * f_eta), 2) +  torch.mean(f_eta * f_eta)
+        # reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
+      else:
+        # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
+        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y)
+      
+    loss = self.reg_lambda * self.criterion(f_beta + f_eta, y) + reg_loss
     
     return loss
 
