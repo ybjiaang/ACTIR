@@ -3,8 +3,9 @@ import torch
 from torch import nn
 import copy
 from tqdm import tqdm
+from torch.autograd import grad
 
-from misc import batchify, HSICLoss, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
+from misc import batchify, HSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
 class AdaptiveInvariantNNTrainer():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -12,6 +13,7 @@ class AdaptiveInvariantNNTrainer():
     self.config = config
     self.causal_dir = causal_dir
     self.classification = self.config.classification
+    self.inner_gd = True
     self.num_class = config.num_class
 
     # define loss
@@ -25,21 +27,46 @@ class AdaptiveInvariantNNTrainer():
     # self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
     self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
 
-    self.model.freeze_all_but_phi()
-    self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
+    # self.model.freeze_all_but_phi()
+    # self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
 
-    # self.model.freeze_all_but_beta()
-    # self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
+    self.model.freeze_all_but_beta()
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
+    self.reg_lambda_2 = config.reg_lambda_2
     self.gamma = config.gamma
     # during test, use the first eta
     self.eta_test_ind = 0
 
     self.softmax = nn.Softmax(dim=1)
 
-  def inner_loss(self, x, y, env_ind):
-    f_beta, f_eta, _ = self.model(x, env_ind)
+  def calculate_eta(self, x, y, b):
+    """ 
+    x.shape = n, fea
+    y.shape = n, 1
+    b = fea, 1
+    """
+    M = SampleCovariance(x, x, mean_centering = False)
+    if self.causal_dir:
+      M_reg = SampleCovariance(x, x, mean_centering = True)
+    else:
+      M_reg = ConditionalCovaraince(x,y) 
+      # M_reg = SampleCovariance(x, x, mean_centering = True)
+    LHS = torch.mean(x * y, dim = 0, keepdim=True).T - M @ b
+    # print(LHS)
+    RHS = M + self.reg_lambda * (M_reg @ b) @ (M_reg @ b).T + 0.001 * torch.eye(x.shape[1])
+    # print(RHS)
+    # print(torch.linalg.svd(RHS))
+
+    # eta = torch.linalg.lstsq(RHS, LHS).solution
+    eta = torch.inverse(RHS) @ LHS
+    # print(eta)
+    # exit(0)
+    return eta
+
+  def reg_loss(self, f_beta, f_eta, y, end_ind):
+    
     if self.classification:
       if self.causal_dir:
         # reg_loss = 0
@@ -61,67 +88,66 @@ class AdaptiveInvariantNNTrainer():
       else:
         # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y)
-        reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) # pow does not work
+        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+    
+    return reg_loss
+
+  def inner_loss(self, x, y, env_ind):
+    f_beta, f_eta, _ = self.model(x, env_ind)
       
-    loss = self.reg_lambda * self.criterion(f_beta + f_eta, y) + reg_loss
-    # print("check loss seperately")
-    # print(self.criterion(f_beta + f_eta, y).item())
-    # print(reg_loss.item())
-    # print("---------")
+    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
+
+    return loss
+  
+  def contraint_loss(self, f_beta, f_eta, y, env_ind):
+    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
 
     return loss
     
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 50):
+  def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
     n_train_envs = len(train_dataset)
 
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
       for train in env_batchify(train_dataset, batch_size):
-        self.model.freeze_all_but_etas()
-        # print("----------")
-        for env_ind in range(n_train_envs):
-          # print(env_ind)
-          # print(0, self.model.etas[0])
-          # print(1, self.model.etas[1])
-          # printModelParam(self.model.Phi)
-          for k in range(n_inner_loop):
-            x, y = train[env_ind]
 
-            loss = self.inner_loss(x, y, env_ind)
-            self.adam_inner_optimizers[env_ind].zero_grad()
-            loss.backward()
-            # for p in self.model.etas.parameters():
-            #   print(p.grad)
-            self.adam_inner_optimizers[env_ind].step()
-            # if k % 10 == 0:
-            #   print("inner loss")
-            #   print(env_ind, loss.item())
-          # print(0, self.model.etas[0])
-          # print(1, self.model.etas[1])
-          # printModelParam(self.model.Phi)
-
-        # print("-----inner loop finished--------")
-        # print(0, self.model.etas[0])
-        # print(1, self.model.etas[1])
-        # printModelParam(self.model.Phi)
         # update phi
-        self.model.freeze_all_but_phi()
+        # self.model.freeze_all_but_phi()
+        self.model.freeze_all_but_beta()
         phi_loss = 0
         for env_ind in range(n_train_envs):
             x, y = train[env_ind]
             f_beta, f_eta, _ = self.model(x, env_ind)
-            phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y)
+            contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
+            phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
+            phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
 
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
-        # print(0, self.model.etas[0])
-        # print(1, self.model.etas[1])
-        # printModelParam(self.model.Phi)
-        # print("--------------------------------")
+
+        # update eta
+        # if self.inner_gd:
+        #   self.model.freeze_all_but_etas()
+        #   for env_ind in range(n_train_envs):
+        #     for k in range(n_inner_loop):
+        #       x, y = train[env_ind]
+
+        #       loss = self.inner_loss(x, y, env_ind)
+        #       self.adam_inner_optimizers[env_ind].zero_grad()
+        #       loss.backward()
+        #       self.adam_inner_optimizers[env_ind].step()
+        # else:
+        #   self.model.freeze_all()
+        #   for env_ind in range(n_train_envs):
+        #     x, y = train[env_ind]
+        #     _, _, phi_x = self.model(x, env_ind)
+        #     self.model.etas[env_ind].data = self.calculate_eta(phi_x, y, self.model.beta)
+        # print(self.model.etas[0])
+
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 

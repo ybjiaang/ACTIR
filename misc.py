@@ -88,33 +88,59 @@ def GaussianKernelMatrix(x, sigma=1):
 def LinearKernelMatrix(x):
   return torch.mm(x,x.t())
 
-def SampleCovariance(x,y):
+def SampleCovariance(x,y, mean_centering = True):
   n, _ = x.shape
-  mean_x = torch.mean(x, dim = 0)
-  mean_y = torch.mean(y, dim = 0)
-  estimate = (x - mean_x).T @ (y - mean_y) / (n - 1)
-
+  if mean_centering:
+    mean_x = torch.mean(x, dim = 0)
+    mean_y = torch.mean(y, dim = 0)
+    estimate = (x - mean_x).T @ (y - mean_y) / (n - 1)
+  else:
+    estimate = x.T @ y / n
+    
   return estimate
 
-def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
-  # m,_ = x.shape #batch size
-  # K = GaussianKernelMatrix(x,s_x)
-  # L = GaussianKernelMatrix(y,s_y)
-  # H = torch.eye(m) - 1.0/m * torch.ones((m,m))
-  # if cuda:
-  #   H = H.double().cuda() 
-  # HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
-  # return HSIC
+def ConditionalCovaraince(x, y):
+  n, _ = x.shape
+  if len(y.shape) > 1:
+    temp_y = y[:,0]
+  else:
+    temp_y = y
+  labels_in_batch_sorted, indices = torch.sort(temp_y)
+  unique_ixs = 1 + (labels_in_batch_sorted[1:] - labels_in_batch_sorted[:-1]).nonzero()
+  unique_ixs = [0] + unique_ixs.flatten().cpu().numpy().tolist() + [len(temp_y)]
 
-  n,_ = x.shape #batch size
-  Kx = GaussianKernelMatrix(x,s_x)
-  Ky = GaussianKernelMatrix(y,s_y)
-  Gx = Centering_GramMatrix(Kx)
-  Gy = Centering_GramMatrix(Ky)
-  Rx = Gx @ torch.inverse(Gx + n * epsilon * torch.eye(n))
-  Ry = Gy @ torch.inverse(Gy + n * epsilon * torch.eye(n))
-  HSIC = torch.trace(Rx @ Ry)
+  estimate = 0
+  for j in range(len(unique_ixs)-1):
+    current_class_indices = unique_ixs[j], unique_ixs[j + 1]
+    count = current_class_indices[1] - current_class_indices[0]
+    if count < 2: 
+      continue
+    curr_class_slice = slice(*current_class_indices)
+    curr_class_indices = indices[curr_class_slice].sort()[0]
+
+    estimate += SampleCovariance(x[curr_class_indices, :], x[curr_class_indices, :]) * count
+
+  return estimate / n
+
+def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
+  m,_ = x.shape #batch size
+  K = GaussianKernelMatrix(x,s_x)
+  L = GaussianKernelMatrix(y,s_y)
+  H = torch.eye(m) - 1.0/m * torch.ones((m,m))
+  if cuda:
+    H = H.double().cuda() 
+  HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
   return HSIC
+
+  # n,_ = x.shape #batch size
+  # Kx = GaussianKernelMatrix(x,s_x)
+  # Ky = GaussianKernelMatrix(y,s_y)
+  # Gx = Centering_GramMatrix(Kx)
+  # Gy = Centering_GramMatrix(Ky)
+  # Rx = Gx @ torch.inverse(Gx + n * epsilon * torch.eye(n))
+  # Ry = Gy @ torch.inverse(Gy + n * epsilon * torch.eye(n))
+  # HSIC = torch.trace(Rx @ Ry)
+  # return HSIC
 
 def DiscreteConditionalExpecationTest(x, y, z):
   n, _ = x.shape
