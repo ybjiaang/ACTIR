@@ -11,7 +11,7 @@ def run_cmd(cmd):
 	logging.info("Running command: {:}".format(cmd))
 	subprocess.check_call(cmd,shell=True)
 
-log_directory = "./log_syn_anti"
+log_directory = "./log_syn"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
@@ -32,7 +32,7 @@ with open(filename, 'a', newline='') as file:
     writer.writerow(colname)
 
 for _ in range(100):
-    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=causal --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)
     run_cmd(cmd)
