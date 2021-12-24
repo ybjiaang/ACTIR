@@ -40,14 +40,15 @@ class BikeSharingDataset(object):
                     season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, [-1]])
                 self.test_data = (season_data_permutated[: self.test_finetune_size + self.test_unlabled_size, :-1], 
                     season_data_permutated[: self.test_finetune_size + self.test_unlabled_size, [-1]])
-            else:
-                train_num = int(total_num * 0.8)
-                train_x = season_data_permutated[:train_num, :-1]
-                train_y = season_data_permutated[:train_num, [-1]]
-                val_x = season_data_permutated[train_num:, :-1]
-                val_y = season_data_permutated[train_num:, [-1]]
-                self.train_data_by_season.append((train_x, train_y))
+            elif i == (self.test_season + 1) % self.num_total_envs:
+                val_x = season_data_permutated[:, :-1]
+                val_y = season_data_permutated[:, [-1]]
                 self.val_data_by_season.append((val_x, val_y))
+            else:
+                train_x = season_data_permutated[:, :-1]
+                train_y = season_data_permutated[:, [-1]]
+                self.train_data_by_season.append((train_x, train_y))
+                
 
     def sample_envs(self, env_ind=0, train_val_test = 0):
         # train

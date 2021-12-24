@@ -128,6 +128,9 @@ if __name__ == '__main__':
     # create test dataset
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
+    if args.hyper_param_tuning:
+      test_dataset = val_dataset
+
   # loss fn
   if args.classification:
     criterion = torch.nn.CrossEntropyLoss()

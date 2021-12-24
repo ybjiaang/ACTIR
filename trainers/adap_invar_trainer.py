@@ -25,7 +25,7 @@ class AdaptiveInvariantNNTrainer():
     for i in range(len(self.model.etas)):
       self.adam_inner_optimizers.append(torch.optim.Adam([self.model.etas[i]],lr=1e-2))
     # self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
-    self.test_inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-3)
+    self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
 
     # self.model.freeze_all_but_phi()
     # self.outer_optimizer = torch.optim.Adam(self.model.Phi.parameters(),lr=1e-2)
