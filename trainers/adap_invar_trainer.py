@@ -128,26 +128,13 @@ class AdaptiveInvariantNNTrainer():
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
-
-        # update eta
-        # if self.inner_gd:
-        #   self.model.freeze_all_but_etas()
-        #   for env_ind in range(n_train_envs):
-        #     for k in range(n_inner_loop):
-        #       x, y = train[env_ind]
-
-        #       loss = self.inner_loss(x, y, env_ind)
-        #       self.adam_inner_optimizers[env_ind].zero_grad()
-        #       loss.backward()
-        #       self.adam_inner_optimizers[env_ind].step()
-        # else:
-        #   self.model.freeze_all()
-        #   for env_ind in range(n_train_envs):
-        #     x, y = train[env_ind]
-        #     _, _, phi_x = self.model(x, env_ind)
-        #     self.model.etas[env_ind].data = self.calculate_eta(phi_x, y, self.model.beta)
-        # print(self.model.etas[0])
-
+      with torch.no_grad():
+        # print(self.model.etas[env_ind])
+        for env_ind in range(n_train_envs):
+          self.model.etas[env_ind].data = self.model.etas[env_ind] / torch.norm(self.model.etas[env_ind]) * self.num_class
+        # print(self.model.etas[env_ind])
+        # print(torch.norm(self.model.etas[env_ind]))
+      
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
 
@@ -224,6 +211,9 @@ class AdaptiveInvariantNNTrainer():
     self.model.freeze_all_but_etas()
 
     # test set is ususally small
+    # for param in self.model.Phi.parameters():
+    #   print(param.data)
+    # print(self.model.etas[0])
     for i in range(n_loop):
       loss = 0
       batch_num = 0
@@ -238,7 +228,7 @@ class AdaptiveInvariantNNTrainer():
       self.test_inner_optimizer.step()
       # print(loss.item())
 
-      if self.causal_dir:
+      if self.causal_dir and not self.classification:
         """ projected gradient descent """
         if projected_gd:
           with torch.no_grad():
@@ -246,7 +236,14 @@ class AdaptiveInvariantNNTrainer():
             norm = v.T @ v
             alpha = self.model.etas[0].T @ v
             self.model.etas[0].sub_(alpha * v/norm)
-        # print(self.model.etas[0].T @ M @ self.model.beta )
 
+        # print(self.model.etas[0].T @ M @ self.model.beta )
+      # print(i)
+      # for param in self.model.Phi.parameters():
+      #   print(param.data)
+      # print(i, self.model.etas[0])
+      # print(f_beta)
+      # print(f_beta + f_eta)
+      # print(y)
       # if i % 10 == 0:
       #     print(loss.item()/batch_num) 

@@ -174,7 +174,7 @@ class AntiCausalControlDataset(Envs):
     z = (2*y - 1) * (2* factor - 1)
     x_y_perp = z
     
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(y) #torch.squeeze(torch.Tensor(y).long())
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) 
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")
