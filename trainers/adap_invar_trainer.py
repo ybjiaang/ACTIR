@@ -129,12 +129,10 @@ class AdaptiveInvariantNNTrainer():
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
-      with torch.no_grad():
-        # print(self.model.etas[env_ind])
-        for env_ind in range(n_train_envs):
-          self.model.etas[env_ind].data = self.model.etas[env_ind] / torch.norm(self.model.etas[env_ind]) * self.num_class
-        # print(self.model.etas[env_ind])
-        # print(torch.norm(self.model.etas[env_ind]))
+
+      # with torch.no_grad():
+      #   for env_ind in range(n_train_envs):
+      #     self.model.etas[env_ind].data = self.model.etas[env_ind] / torch.norm(self.model.etas[env_ind]) * self.num_class
       
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
