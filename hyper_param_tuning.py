@@ -24,8 +24,8 @@ def run_cmd(cmd):
     # for gamma in [0.1, 0.3, 0.5, 0.7, 0.9]:
 reg_lambda = 0.1
 gamma = 0.9
-for reg_lambda in np.logspace(-2, 3, num=30):
-    for reg_lambda_2 in np.logspace(-2, 3, num=30):
+for reg_lambda in np.logspace(-1, 4, num=30):
+    for reg_lambda_2 in np.logspace(-1, 4, num=30):
         for gamma in [0.7, 0.9]:
             # synthetical anti-causal
             # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
