@@ -214,17 +214,18 @@ class AdaptiveInvariantNNTrainer():
     #   print(param.data)
     # print(self.model.etas[0])
     for i in range(n_loop):
-      loss = 0
       batch_num = 0
       for x, y in batchify(test_finetune_dataset, batch_size):
+        loss = 0
         batch_num += 1
 
         f_beta, f_eta, _ = self.model(x, self.eta_test_ind)
         loss += self.criterion(f_beta + f_eta, y) 
 
-      self.test_inner_optimizer.zero_grad()
-      loss.backward()
-      self.test_inner_optimizer.step()
+        self.test_inner_optimizer.zero_grad()
+        loss.backward()
+        self.test_inner_optimizer.step()
+
       # print(loss.item())
 
       if self.causal_dir and not self.classification:
@@ -244,5 +245,5 @@ class AdaptiveInvariantNNTrainer():
       # print(f_beta)
       # print(f_beta + f_eta)
       # print(y)
-      # if i % 10 == 0:
-      #     print(loss.item()/batch_num) 
+      if i % 10 == 0 and self.config.verbose:
+          print(loss.item()/batch_num) 
