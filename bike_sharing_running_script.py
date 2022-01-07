@@ -32,7 +32,7 @@ for bike_season in range(4):
           colname.append("Causal " + str(point))
       writer.writerow(colname)
     
-    for _ in range(1):
+    for _ in range(30):
         cmd = 'python main.py --compare_all_invariant_models --dataset=bike --bike_test_season={:} --bike_year=0 --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(bike_season, filename)
         for point in n_fine_tune_points:
             cmd += " " + str(point)
