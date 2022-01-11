@@ -19,7 +19,7 @@ class IRM():
     # optimizer
     self.optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-2)
 
-    self.reg_lambda = 1000 #0.1 # reg_lambda
+    self.reg_lambda = self.config.irm_reg_lambda #0.1 # reg_lambda
 
 
   # Define training Loop

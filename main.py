@@ -42,6 +42,7 @@ if __name__ == '__main__':
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 1000, help='regularization coeff for irm')
   parser.add_argument('--reg_lambda', type=float, default= 4000, help='regularization coeff for adaptive invariant learning')
   parser.add_argument('--reg_lambda_2', type=float, default= 1.2, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
@@ -264,6 +265,12 @@ if __name__ == '__main__':
 
     print("irm test...")
     irm_loss = trainer.test(test_dataset)
+
+    if args.hyper_param_tuning:
+      with open(args.cvs_dir, 'a', newline='') as file: 
+        writer = csv.writer(file)
+        row = [args.irm_reg_lambda, irm_loss]
+        writer.writerow(row)
 
     if args.print_base_graph: 
       # check if the base classifer match after training
