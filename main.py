@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 
 from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset, AntiCausalControlDataset
 from dataset.bike_env import BikeSharingDataset
+from dataset.color_mnist import ColorMnist
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -57,10 +58,12 @@ if __name__ == '__main__':
   parser.add_argument('--n_fine_tune_points', nargs='+', type=int, help='how many points for finetuning')
 
   # dataset
-  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike')
-  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
+  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist')
+  
   # synthetic dataset specifics
+  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
   parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
+
   # bike sharing specifics
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
@@ -131,6 +134,28 @@ if __name__ == '__main__':
     if args.hyper_param_tuning:
       test_dataset = val_dataset
 
+  if args.dataset == "color_mnist":
+    print("color mnist dataset")
+    env = ColorMnist()
+
+    args.n_envs = env.num_train_evns
+
+    # create training data
+    train_dataset = []
+    for i in range(env.num_train_evns):
+      x, y = env.sample_envs(env_ind=i, train_val_test=0)
+      train_dataset.append((x,y))
+
+    # create val dataset
+    x, y = env.sample_envs(train_val_test=1)
+    val_dataset = (x, y)
+
+    # create test dataset
+    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+
+    if args.hyper_param_tuning:
+      test_dataset = val_dataset
+
   # loss fn
   if args.classification:
     criterion = torch.nn.CrossEntropyLoss()
@@ -162,6 +187,16 @@ if __name__ == '__main__':
               nn.ReLU(),
               nn.Linear(16, phi_odim)
           )
+
+  if args.dataset == "color_mnist":
+    hidden_dims = 256
+    lin1 = nn.Linear(input_dim, hidden_dims)
+    lin2 = nn.Linear(hidden_dims, hidden_dims)
+    lin3 = nn.Linear(hidden_dims, phi_odim)
+    for lin in [lin1, lin2, lin3]:
+        nn.init.xavier_uniform_(lin.weight)
+        nn.init.zeros_(lin.bias)
+    Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
