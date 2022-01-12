@@ -83,9 +83,9 @@ class AdaptiveInvariantNNTrainer():
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
       if self.causal_dir:
-        reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
+        # reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
         # reg_loss = torch.pow(torch.mean(f_beta * f_eta), 2) +  torch.mean(f_eta * f_eta)
-        # reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
+        reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
       else:
         # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
