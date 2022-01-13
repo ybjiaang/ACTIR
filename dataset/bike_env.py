@@ -35,14 +35,14 @@ class BikeSharingDataset(object):
             season_data_permutated = torch.Tensor(season_data[np.random.permutation(total_num)])
             season_data_permutated[:, -1] /= 100
             if i == self.test_season:
-                season_data_permutated[:, -2] = 0
+                # season_data_permutated[:, -2] = 0
                 self.test_data_finetune = (season_data_permutated[:self.test_finetune_size, :-1], season_data_permutated[:self.test_finetune_size, [-1]])
                 self.test_data_unlabled = (season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, :-1], 
                     season_data_permutated[self.test_finetune_size: self.test_finetune_size + self.test_unlabled_size, [-1]])
                 self.test_data = (season_data_permutated[self.test_finetune_size + self.test_unlabled_size:, :-1], 
                     season_data_permutated[self.test_finetune_size + self.test_unlabled_size:, [-1]])
             elif i == (self.test_season + 1) % self.num_total_envs:
-                season_data_permutated[:, -2] = 0
+                # season_data_permutated[:, -2] = 0
                 val_x = season_data_permutated[:, :-1]
                 val_y = season_data_permutated[:, [-1]]
                 self.val_data_by_season.append((val_x, val_y))

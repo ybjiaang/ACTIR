@@ -39,7 +39,7 @@ for reg_lambda in np.logspace(-2, 4, num=30):
             # cmd = 'python main.py --model_name=adp_invar --causal_dir_syn=causal --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)
 
-            cmd = 'python main.py --model_name=adp_invar  --dataset=bike --bike_test_season=1 --bike_year=0 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            cmd = 'python main.py --model_name=adp_invar --dataset=bike --bike_test_season=1 --bike_year=0 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             run_cmd(cmd)
 
 # for reg_lambda in np.logspace(-2, 4, num=30):
