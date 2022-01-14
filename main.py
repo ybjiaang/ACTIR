@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 1, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 0.2, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 0.02, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 573.6152510448682, help='regularization coeff for irm')
+  parser.add_argument('--reg_lambda', type=float, default= 1000, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 0.4, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
 

@@ -24,7 +24,7 @@ def run_cmd(cmd):
 
 reg_lambda = 0.1
 gamma = 0.9
-for reg_lambda in np.logspace(-2, 4, num=30):
+for reg_lambda in np.logspace(1, 4, num=10):
     for reg_lambda_2 in np.logspace(-2, 4, num=30):
         for gamma in [0.7, 0.9]:
             # synthetical anti-causal
