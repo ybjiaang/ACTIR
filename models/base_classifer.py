@@ -4,7 +4,7 @@ from torch import nn
 import copy
 
 class BaseClass(nn.Module):
-  def __init__(self, input_dim, Phi, out_dim=1):
+  def __init__(self, input_dim, Phi, phi_dim = None, out_dim=1):
     super(BaseClass, self).__init__()
 
     self.input_dim = input_dim
@@ -12,7 +12,10 @@ class BaseClass(nn.Module):
     # Define \Phi
     self.Phi = copy.deepcopy(Phi)
 
-    self.phi_odim = self.Phi[-1].out_features
+    if not phi_dim:
+      self.phi_odim = self.Phi[-1].out_features
+    else:
+      self.phi_odim = phi_dim
     
     # Define \beta
     init_beta_numpy = np.zeros((self.phi_odim, out_dim))

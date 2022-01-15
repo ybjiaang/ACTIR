@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset, AntiCausalControlDataset
 from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
+from dataset.camelyon17 import Camelyon17
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -31,12 +32,12 @@ from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
-from misc import fine_tunning_test, BaseLoss
+from misc import fine_tunning_test, BaseLoss, initialize_torchvision_model
 
 if __name__ == '__main__':
-  # torch.manual_seed(0)
-  # random.seed(0)
-  # np.random.seed(0)
+  torch.manual_seed(0)
+  random.seed(0)
+  np.random.seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -59,7 +60,7 @@ if __name__ == '__main__':
   parser.add_argument('--n_fine_tune_points', nargs='+', type=int, help='how many points for finetuning')
 
   # dataset
-  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist')
+  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, camelyon17')
   
   # synthetic dataset specifics
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
@@ -113,49 +114,34 @@ if __name__ == '__main__':
     x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
 
-  if args.dataset == "bike":
-    print("bikesharing dataset")
-    env = BikeSharingDataset(test_season=args.bike_test_season, year=args.bike_year)
+  else:
+    if args.dataset == "bike":
+      print("bikesharing dataset")
+      env = BikeSharingDataset(test_season=args.bike_test_season, year=args.bike_year)
+    if args.dataset == "color_mnist":
+      print("color mnist dataset")
+      env = ColorMnist()
+    if args.dataset == "camelyon17":
+      print("camelyon17 dataset")
+      env = Camelyon17(args)
 
-    args.n_envs = env.num_train_evns
+      args.n_envs = env.num_train_evns
 
-    # create training data
-    train_dataset = []
-    for i in range(env.num_train_evns):
-      x, y = env.sample_envs(env_ind=i, train_val_test=0)
-      train_dataset.append((x,y))
+      # create training data
+      train_dataset = []
+      for i in range(env.num_train_evns):
+        x, y = env.sample_envs(env_ind=i, train_val_test=0)
+        train_dataset.append((x,y))
 
-    # create val dataset
-    x, y = env.sample_envs(train_val_test=1)
-    val_dataset = (x, y)
+      # create val dataset
+      x, y = env.sample_envs(train_val_test=1)
+      val_dataset = (x, y)
 
-    # create test dataset
-    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+      # create test dataset
+      test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
-    if args.hyper_param_tuning:
-      test_dataset = val_dataset
-
-  if args.dataset == "color_mnist":
-    print("color mnist dataset")
-    env = ColorMnist()
-
-    args.n_envs = env.num_train_evns
-
-    # create training data
-    train_dataset = []
-    for i in range(env.num_train_evns):
-      x, y = env.sample_envs(env_ind=i, train_val_test=0)
-      train_dataset.append((x,y))
-
-    # create val dataset
-    x, y = env.sample_envs(train_val_test=1)
-    val_dataset = (x, y)
-
-    # create test dataset
-    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
-
-    if args.hyper_param_tuning:
-      test_dataset = val_dataset
+      if args.hyper_param_tuning:
+        test_dataset = val_dataset
 
   # loss fn
   if args.classification:
@@ -198,10 +184,22 @@ if __name__ == '__main__':
         nn.init.xavier_uniform_(lin.weight)
         nn.init.zeros_(lin.bias)
     Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+
+  if args.dataset == "camelyon17":
+    """use resnet18"""
+    args.model_kwargs = {
+            'pretrained': True,
+        }
+
+    Phi = initialize_torchvision_model(
+                name='resnet18',
+                d_out=None,
+                **args.model_kwargs)
+    args.phi_odim = Phi.d_out
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi).to(args.device)
+    model = BaseClass(input_dim, Phi, phi_dim = args.phi_odim).to(args.device)
     trainer = HSIC(model, criterion, args)
     
     if args.print_base_graph:
@@ -240,7 +238,7 @@ if __name__ == '__main__':
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = IRM(model, criterion, args)
 
     if args.print_base_graph:
@@ -286,7 +284,7 @@ if __name__ == '__main__':
 
   """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = ERM(model, criterion, args)
     
     if args.print_base_graph:
@@ -326,7 +324,7 @@ if __name__ == '__main__':
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, out_dim).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = LinearMAML(model, criterion, args)
 
     if args.print_base_graph:
@@ -370,7 +368,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
 
     if args.print_base_graph:
@@ -420,7 +418,7 @@ if __name__ == '__main__':
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim).to(args.device)
+    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
     
     if args.print_base_graph:

@@ -1,6 +1,7 @@
 from matplotlib.pyplot import axes, axis
 import numpy as np
 import torch 
+import torch.nn as nn
 
 def printModelParam(model):
   for name, param in model.named_parameters():
@@ -25,7 +26,7 @@ def env_batchify(dataset, batch_size):
   n_envs = len(dataset)
   all_lens = np.zeros(n_envs)
   for i, dataset_per_env in enumerate(dataset):
-    all_lens[i] = dataset_per_env[0].shape[0]
+    all_lens[i] = len(dataset_per_env[0])
 
   total_length_min = np.min(all_lens)
   nloops = np.ceil(total_length_min/batch_size).astype(int)
@@ -50,7 +51,7 @@ def maml_batchify(dataset, batch_size):
   n_envs = len(dataset)
   all_lens = np.zeros(n_envs)
   for i, dataset_per_env in enumerate(dataset):
-    all_lens[i] = dataset_per_env[0].shape[0]
+    all_lens[i] = len(dataset_per_env[0])
 
   total_length_min = np.min(all_lens)
   nloops = np.ceil(total_length_min/batch_size).astype(int)
@@ -283,3 +284,47 @@ def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fi
   else:
     print(finetuned_loss)
     return finetuned_loss
+
+""" copy from https://github.com/p-lambda/wilds/blob/a7a452c80cad311cf0aabfd59af8348cba1b9861/examples/models/layers.py """
+import torch.nn.functional as F
+
+class Identity(nn.Module):
+    """An identity layer"""
+    def __init__(self, d):
+        super().__init__()
+        self.in_features = d
+        self.out_features = d
+
+    def forward(self, x):
+        return x
+
+""" copy from https://github.com/p-lambda/wilds/blob/a7a452c80cad311cf0aabfd59af8348cba1b9861/examples/models/initializer.py"""
+def initialize_torchvision_model(name, d_out, **kwargs):
+    import torchvision
+
+    # get constructor and last layer names
+    if name == 'wideresnet50':
+        constructor_name = 'wide_resnet50_2'
+        last_layer_name = 'fc'
+    elif name == 'densenet121':
+        constructor_name = name
+        last_layer_name = 'classifier'
+    elif name in ('resnet18', 'resnet34', 'resnet50', 'resnet101'):
+        constructor_name = name
+        last_layer_name = 'fc'
+    else:
+        raise ValueError(f'Torchvision model {name} not recognized')
+    # construct the default model, which has the default last layer
+    constructor = getattr(torchvision.models, constructor_name)
+    model = constructor(**kwargs)
+    # adjust the last layer
+    d_features = getattr(model, last_layer_name).in_features
+    if d_out is None:  # want to initialize a featurizer model
+        last_layer = Identity(d_features)
+        model.d_out = d_features
+    else: # want to initialize a classifier for a particular num_classes
+        last_layer = nn.Linear(d_features, d_out)
+        model.d_out = d_out
+    setattr(model, last_layer_name, last_layer)
+
+    return model
