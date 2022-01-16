@@ -26,7 +26,7 @@ class ERM():
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
-      for train in env_batchify(train_dataset, batch_size):
+      for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):
           x, y = train[env_ind]

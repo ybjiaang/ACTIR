@@ -32,7 +32,7 @@ class Camelyon17(object):
         dataset = get_dataset(dataset="camelyon17", download=True)
 
         torch_transform = transforms.Compose(
-                [transforms.Resize((96, 96)), transforms.ToTensor()]
+                [transforms.Resize((48, 48)), transforms.ToTensor()]
             )
         
         train_data = dataset.get_subset(

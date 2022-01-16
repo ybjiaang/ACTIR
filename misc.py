@@ -7,7 +7,7 @@ def printModelParam(model):
   for name, param in model.named_parameters():
     print(name, param.data)
 
-def batchify(dataset, batch_size):
+def batchify(dataset, batch_size, config):
   x, y = dataset
   total_length = x.shape[0]
   nloops = np.ceil(total_length/batch_size).astype(int)
@@ -16,13 +16,13 @@ def batchify(dataset, batch_size):
     for i in range(nloops):
       start = i*batch_size
       if (start + batch_size) >= total_length:
-        yield x[start:], y[start:]
+        yield x[start:].to(config.device), y[start:].to(config.device)
       else:
-        yield x[start : start + batch_size], y[start : start + batch_size]
+        yield x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)
 
   return creatDataSet()
 
-def env_batchify(dataset, batch_size):
+def env_batchify(dataset, batch_size, config):
   n_envs = len(dataset)
   all_lens = np.zeros(n_envs)
   for i, dataset_per_env in enumerate(dataset):
@@ -43,11 +43,11 @@ def env_batchify(dataset, batch_size):
         else:
           train_sqt_set.append((x[start : start + batch_size], y[start : start + batch_size]))
 
-      yield train_sqt_set
+      yield train_sqt_set.to(config.device)
       
   return creatDataSet()
 
-def maml_batchify(dataset, batch_size):
+def maml_batchify(dataset, batch_size, config):
   n_envs = len(dataset)
   all_lens = np.zeros(n_envs)
   for i, dataset_per_env in enumerate(dataset):
@@ -73,7 +73,7 @@ def maml_batchify(dataset, batch_size):
           train_sqt_set.append((x[start : start + batch_size//2], y[start : start + batch_size//2]))
           train_qrt_set.append((x[start + batch_size//2 : start + batch_size], y[start + batch_size//2 : start + batch_size]))
 
-      yield train_sqt_set, train_qrt_set
+      yield train_sqt_set.to(config.device), train_qrt_set.to(config.device)
       
   return creatDataSet()
 
