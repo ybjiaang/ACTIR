@@ -22,10 +22,12 @@ def run_cmd(cmd):
 
 
 
-reg_lambda = 0.1
-gamma = 0.9
-for reg_lambda in np.logspace(1, 4, num=10):
-    for reg_lambda_2 in np.logspace(-2, 4, num=30):
+# reg_lambda = 0.1
+# gamma = 0.9
+# for reg_lambda in np.logspace(1, 4, num=10):
+#     for reg_lambda_2 in np.logspace(-2, 4, num=30):
+for reg_lambda in [0.1, 1, 10, 100]:
+    for reg_lambda_2 in [0.1, 1, 10, 100]:
         for gamma in [0.7, 0.9]:
             # synthetical anti-causal
             # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
@@ -42,9 +44,13 @@ for reg_lambda in np.logspace(1, 4, num=10):
             # cmd = 'python main.py --model_name=adp_invar --dataset=bike --bike_test_season=1 --bike_year=0 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)
 
-            cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=color_mnist --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            # cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=color_mnist --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            # run_cmd(cmd)
+
+            cmd = 'python main.py --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --n_outer_loop 20 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             run_cmd(cmd)
 
-# for reg_lambda in np.logspace(-2, 4, num=30):
-#     cmd = 'python main.py --model_name=irm  --dataset=color_mnist --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
+# for reg_lambda in np.logspace(-2, 2, num=5):
+# for reg_lambda in [0.1, 1, 10, 100]:
+#     cmd = 'python main.py --model_name=irm  --dataset=camelyon17 --classification --n_outer_loop 20 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
 #     run_cmd(cmd)
