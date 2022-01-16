@@ -39,11 +39,11 @@ def env_batchify(dataset, batch_size, config):
       for env_ind in range(n_envs):
         x, y = dataset[env_ind]
         if (start + batch_size) >= all_lens[env_ind]:
-          train_sqt_set.append((x[start:], y[start:]))
+          train_sqt_set.append((x[start:].to(config.device), y[start:].to(config.device)))
         else:
-          train_sqt_set.append((x[start : start + batch_size], y[start : start + batch_size]))
+          train_sqt_set.append((x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)))
 
-      yield train_sqt_set.to(config.device)
+      yield train_sqt_set
       
   return creatDataSet()
 
@@ -66,14 +66,14 @@ def maml_batchify(dataset, batch_size, config):
         x, y = dataset[env_ind]
         if (start + batch_size) >= all_lens[env_ind]:
           # assume we have at least two elements, otherwise, python would throw the index error
-          train_sqt_set.append((x[start::2], y[start::2]))
-          train_qrt_set.append((x[start+1::2], y[start+1::2]))
+          train_sqt_set.append((x[start::2].to(config.device), y[start::2].to(config.device)))
+          train_qrt_set.append((x[start+1::2].to(config.device), y[start+1::2].to(config.device)))
 
         else:
-          train_sqt_set.append((x[start : start + batch_size//2], y[start : start + batch_size//2]))
-          train_qrt_set.append((x[start + batch_size//2 : start + batch_size], y[start + batch_size//2 : start + batch_size]))
+          train_sqt_set.append((x[start : start + batch_size//2].to(config.device), y[start : start + batch_size//2].to(config.device)))
+          train_qrt_set.append((x[start + batch_size//2 : start + batch_size].to(config.device), y[start + batch_size//2 : start + batch_size].to(config.device)))
 
-      yield train_sqt_set.to(config.device), train_qrt_set.to(config.device)
+      yield train_sqt_set, train_qrt_set
       
   return creatDataSet()
 
