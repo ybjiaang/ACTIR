@@ -28,8 +28,8 @@ class IRM():
 
     self.model.train()
 
-    for t in tqdm(range(n_outer_loop)):
-      for train in env_batchify(train_dataset, batch_size):
+    for t in tqdm(range(self.config.n_outer_loop)):
+      for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         penalty = 0
         for env_ind in range(n_train_envs):
@@ -52,7 +52,7 @@ class IRM():
     loss = 0
     total = 0
     
-    for x, y in batchify(test_dataset, batch_size):
+    for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, _ = self.model(x)
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)

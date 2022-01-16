@@ -9,7 +9,7 @@ def printModelParam(model):
 
 def batchify(dataset, batch_size, config):
   x, y = dataset
-  total_length = x.shape[0]
+  total_length = len(x)
   nloops = np.ceil(total_length/batch_size).astype(int)
 
   def creatDataSet():

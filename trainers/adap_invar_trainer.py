@@ -112,8 +112,8 @@ class AdaptiveInvariantNNTrainer():
 
     self.model.train()
 
-    for t in tqdm(range(n_outer_loop)):
-      for train in env_batchify(train_dataset, batch_size):
+    for t in tqdm(range(self.config.n_outer_loop)):
+      for train in env_batchify(train_dataset, batch_size, self.config):
 
         # update phi
         # self.model.freeze_all_but_phi()
@@ -140,7 +140,7 @@ class AdaptiveInvariantNNTrainer():
     total = 0
     base_loss = 0
 
-    for x, y in batchify(test_dataset, batch_size):
+    for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, f_eta, _ = self.model(x, self.eta_test_ind)
 
       if self.classification:
@@ -209,9 +209,9 @@ class AdaptiveInvariantNNTrainer():
     # for param in self.model.Phi.parameters():
     #   print(param.data)
     # print(self.model.etas[0])
-    for i in range(n_loop):
+    for i in range(self.config.n_finetune_loop):
       batch_num = 0
-      for x, y in batchify(test_finetune_dataset, batch_size):
+      for x, y in batchify(test_finetune_dataset, batch_size, self.config):
         loss = 0
         batch_num += 1
 

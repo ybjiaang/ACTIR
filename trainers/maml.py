@@ -56,11 +56,11 @@ class LinearMAML():
   def train(self, train_dataset, batch_size, n_outer_loop = 100):
 
     self.model.train()
-    for t in tqdm(range(n_outer_loop)):
+    for t in tqdm(range(self.config.n_outer_loop)):
       train_spt_set = []
       train_query_set = []
 
-      for train_spt_set, train_query_set in maml_batchify(train_dataset, batch_size):
+      for train_spt_set, train_query_set in maml_batchify(train_dataset, batch_size, self.config):
         loss = self.meta_update(train_spt_set, train_query_set)
         
       if t % 10 == 0 and self.config.verbose:
@@ -80,7 +80,7 @@ class LinearMAML():
     loss = 0
     total = 0
     
-    for x, y in batchify(test_dataset, batch_size):
+    for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, _ = test_model(x, fast_beta = fast_weights)
       
       if self.classification:
@@ -109,7 +109,7 @@ class LinearMAML():
 
     for k in range(1, self.n_inner_update):
       loss = 0
-      for x, y in batchify(test_finetune_dataset, batch_size):
+      for x, y in batchify(test_finetune_dataset, batch_size, self.config):
         f_beta, _ = model(x, fast_beta = fast_weights)
         loss += self.criterion(f_beta, y)
 

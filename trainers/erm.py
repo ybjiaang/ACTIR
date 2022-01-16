@@ -20,12 +20,14 @@ class ERM():
 
 
   # Define training Loop
-  def train(self, train_dataset, batch_size, n_outer_loop = 100):
+  def train(self, train_dataset, batch_size, n_outer_loop = 30):
     n_train_envs = len(train_dataset)
 
     self.model.train()
 
-    for t in tqdm(range(n_outer_loop)):
+    for t in tqdm(range(self.config.n_outer_loop)):
+      loss_print = 0
+      count = 0
       for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):
@@ -36,9 +38,12 @@ class ERM():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        loss_print += loss.item()
+        count += 1
     
-      if t % 10 == 0 and self.config.verbose:
+      if t % 1 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))
+        print(loss_print/count)
 
   def test(self, test_dataset, batch_size = 32):
     
@@ -46,7 +51,7 @@ class ERM():
     loss = 0
     total = 0
     
-    for x, y in batchify(test_dataset, batch_size):
+    for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, _ = self.model(x)
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)

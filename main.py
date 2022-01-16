@@ -48,6 +48,8 @@ if __name__ == '__main__':
   parser.add_argument('--reg_lambda_2', type=float, default= 0.4, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
+  parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
+  parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
 
   # different models
   parser.add_argument('--model_name', type=str, default= "adp_invar", help='type of modesl. current support: adp_invar, erm')
@@ -69,6 +71,9 @@ if __name__ == '__main__':
   # bike sharing specifics
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
+
+  # camelyon17 specifics
+  parser.add_argument('--data_dir', type=str, default= "data", help='where to put data')
 
   # misc
   parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
@@ -196,6 +201,16 @@ if __name__ == '__main__':
                 d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
+
+    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
+    # hidden_dims = 256
+    # lin1 = nn.Linear(input_dim, hidden_dims)
+    # lin2 = nn.Linear(hidden_dims, hidden_dims)
+    # lin3 = nn.Linear(hidden_dims, phi_odim)
+    # for lin in [lin1, lin2, lin3]:
+    #     nn.init.xavier_uniform_(lin.weight)
+    #     nn.init.zeros_(lin.bias)
+    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
