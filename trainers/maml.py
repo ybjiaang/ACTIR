@@ -100,7 +100,7 @@ class LinearMAML():
     param_to_update_inner_loop  = model.beta
 
     loss = 0
-    for x, y in batchify(test_finetune_dataset, batch_size):
+    for x, y in batchify(test_finetune_dataset, batch_size, self.config):
       f_beta, _ = model(x)
       loss += self.criterion(f_beta, y)
 

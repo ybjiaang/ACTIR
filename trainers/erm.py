@@ -38,12 +38,12 @@ class ERM():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        loss_print += loss.item()
+        loss_print += loss
         count += 1
     
       if t % 1 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))
-        print(loss_print/count)
+        print(loss_print.item()/count)
 
   def test(self, test_dataset, batch_size = 32):
     

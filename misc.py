@@ -251,15 +251,19 @@ def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fi
     projected_gd_finetuned_loss = 0.0
 
   x, y = test_finetune_dataset
-  n_total_finetune_datapoints = x.shape[0]
+  n_total_finetune_datapoints = len(x)
 
   for i in range(config.n_fine_tune_tests):
     perm = np.random.permutation(n_total_finetune_datapoints)
     
-    x_perm = x[perm]
-    y_perm = y[perm]
+    try:
+      x_perm = x[perm]
+      y_perm = y[perm]
+    except:
+      x_perm = x
+      y_perm = y
 
-    partical_test_finetune_dataset = (x_perm[:n_fine_tune_points,:], y_perm[:n_fine_tune_points])
+    partical_test_finetune_dataset = (x_perm[:n_fine_tune_points], y_perm[:n_fine_tune_points])
 
     if test_unlabelled_dataset is not None:
       if run_proj_gd:
