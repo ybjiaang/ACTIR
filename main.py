@@ -17,6 +17,7 @@ import random
 import argparse
 # %matplotlib inline
 import csv
+import os
 
 import matplotlib.pyplot as plt
 
@@ -34,18 +35,25 @@ from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
 from misc import fine_tunning_test, BaseLoss, initialize_torchvision_model
 
+def set_seed(seed):
+  random.seed(seed)
+  torch.manual_seed(seed)
+  torch.cuda.manual_seed_all(seed)
+  np.random.seed(seed)
+  os.environ['PYTHONHASHSEED'] = str(seed)
+  torch.backends.cudnn.deterministic = True
+  torch.backends.cudnn.benchmark = False
+
 if __name__ == '__main__':
-  torch.manual_seed(0)
-  random.seed(0)
-  np.random.seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 573.6152510448682, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 1000, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 0.4, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 1, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
@@ -85,6 +93,7 @@ if __name__ == '__main__':
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {args.device} device")
+  print(args.reg_lambda, args.reg_lambda_2)
 
   # create datasets
   if args.dataset == "syn":
@@ -130,23 +139,23 @@ if __name__ == '__main__':
       print("camelyon17 dataset")
       env = Camelyon17(args)
 
-      args.n_envs = env.num_train_evns
+    args.n_envs = env.num_train_evns
 
-      # create training data
-      train_dataset = []
-      for i in range(env.num_train_evns):
-        x, y = env.sample_envs(env_ind=i, train_val_test=0)
-        train_dataset.append((x,y))
+    # create training data
+    train_dataset = []
+    for i in range(env.num_train_evns):
+      x, y = env.sample_envs(env_ind=i, train_val_test=0)
+      train_dataset.append((x,y))
 
-      # create val dataset
-      x, y = env.sample_envs(train_val_test=1)
-      val_dataset = (x, y)
+    # create val dataset
+    x, y = env.sample_envs(train_val_test=1)
+    val_dataset = (x, y)
 
-      # create test dataset
-      test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+    # create test dataset
+    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
-      if args.hyper_param_tuning:
-        test_dataset = val_dataset
+    # if args.hyper_param_tuning:
+    #   test_dataset = val_dataset
 
   # loss fn
   if args.classification:
@@ -198,9 +207,10 @@ if __name__ == '__main__':
 
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=None,
+                d_out=8,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
+    
 
     # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
     # hidden_dims = 256
@@ -409,10 +419,13 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
+    print("adp_invar anti-causal test val ...")
+    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
         writer = csv.writer(file)
-        row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_anti_causal_base_loss]
+        row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_anti_causal_base_loss, adp_invar_anti_causal_base_loss_val]
         writer.writerow(row)
 
     if args.print_base_graph: 

@@ -23,7 +23,7 @@ class CustomInputWILDSSubset(WILDSSubset):
         return len(self.dataset)
 
 class Camelyon17(object):
-    def __init__(self, config, test_finetune_size = 100, test_unlabled_size=100):
+    def __init__(self, config, test_finetune_size = 1000, test_unlabled_size=100):
         super(Camelyon17, self).__init__()
         self.config = config
         self.num_train_evns = 3
@@ -72,6 +72,7 @@ class Camelyon17(object):
 
         # test
         n_tests = len(test_data)
+        print(n_tests)
         fine_tune_frac = test_finetune_size / n_tests
 
         test_data_finetune = dataset.get_subset(
