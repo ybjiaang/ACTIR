@@ -205,13 +205,16 @@ if __name__ == '__main__':
             'pretrained': True,
         }
 
-    Phi = initialize_torchvision_model(
+    feature = initialize_torchvision_model(
                 name='resnet18',
-                d_out=8,
+                d_out=None,
                 **args.model_kwargs)
-    args.phi_odim = Phi.d_out
-    
+    # args.phi_odim = Phi.d_out
+    args.phi_odim = 4
+    lin = nn.Linear(feature.d_out, args.phi_odim)
+    Phi = nn.Sequential(feature, lin)
 
+  
     # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
     # hidden_dims = 256
     # lin1 = nn.Linear(input_dim, hidden_dims)
@@ -335,6 +338,9 @@ if __name__ == '__main__':
     print("erm test...")
     erm_loss = trainer.test(test_dataset)
 
+    print("erm val...")
+    erm_loss_val = trainer.test(val_dataset)
+
     if args.print_base_graph: 
       # check if the base classifer match after training
       with torch.no_grad(): 
@@ -419,9 +425,9 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-    # print("adp_invar anti-causal test val ...")
-    # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
-    adp_invar_anti_causal_base_loss_val = 0
+    print("adp_invar anti-causal test val ...")
+    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    # adp_invar_anti_causal_base_loss_val = 0
 
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
@@ -441,9 +447,15 @@ if __name__ == '__main__':
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if args.run_fine_tune_test:
-      anti_causal_finetune_loss = []
-      for n_tune_points in  args.n_fine_tune_points:
-        anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
+      for n_finetune_loop in [10, 20, 30, 50, 100]:
+        print(n_finetune_loop)
+        trainer.config.n_finetune_loop = n_finetune_loop
+        for learning_rate in [1e-1, 1e-2, 1e-3]:
+          print("learning rate:" + str(learning_rate))
+          trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+          anti_causal_finetune_loss = []
+          for n_tune_points in  args.n_fine_tune_points:
+            anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
