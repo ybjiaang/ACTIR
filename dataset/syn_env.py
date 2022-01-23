@@ -130,7 +130,7 @@ class CausalControlDataset(Envs):
     super(CausalControlDataset, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.95, 0.8, 0.7, 0.1]
+    self.env_means = [0.95, 0.8, 0.2, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp 

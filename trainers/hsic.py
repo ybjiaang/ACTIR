@@ -29,7 +29,7 @@ class HSIC():
     self.model.train()
 
     for t in tqdm(range(n_outer_loop)):
-      for train in env_batchify(train_dataset, batch_size):
+      for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):
           x, y = train[env_ind]
@@ -47,7 +47,7 @@ class HSIC():
     # calculate adjustment
     total_num_y = 0
     for env_ind in range(n_train_envs):
-        for x, y in batchify(train_dataset[env_ind], batch_size):
+        for x, y in batchify(train_dataset[env_ind], batch_size, self.config):
           total_num_y += y.shape[0]
           self.bias_adjustment += torch.sum(y, dim = 0)
 
@@ -58,7 +58,7 @@ class HSIC():
     loss = 0
     total = 0
     
-    for x, y in batchify(test_dataset, batch_size):
+    for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, _ = self.model(x)
 
       if self.classification:

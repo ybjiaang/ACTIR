@@ -45,16 +45,16 @@ def set_seed(seed):
   torch.backends.cudnn.benchmark = False
 
 if __name__ == '__main__':
-  set_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 573.6152510448682, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 0.1, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 1, help='second regularization coeff for adaptive invariant learning')
-  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 0.1, help='regularization coeff for irm')
+  parser.add_argument('--reg_lambda', type=float, default= 0.7, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 0.3, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.7, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
@@ -154,8 +154,8 @@ if __name__ == '__main__':
     # create test dataset
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
-    # if args.hyper_param_tuning:
-    #   test_dataset = val_dataset
+  if args.hyper_param_tuning:
+    test_dataset = val_dataset
 
   # loss fn
   if args.classification:
@@ -419,8 +419,9 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-    print("adp_invar anti-causal test val ...")
-    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    # print("adp_invar anti-causal test val ...")
+    # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    adp_invar_anti_causal_base_loss_val = 0
 
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
