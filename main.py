@@ -338,8 +338,8 @@ if __name__ == '__main__':
     print("erm test...")
     erm_loss = trainer.test(test_dataset)
 
-    print("erm val...")
-    erm_loss_val = trainer.test(val_dataset)
+    # print("erm val...")
+    # erm_loss_val = trainer.test(val_dataset)
 
     if args.print_base_graph: 
       # check if the base classifer match after training
@@ -352,6 +352,10 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/erm_comparision_after.png")
 
+    if args.run_fine_tune_test:
+      erm_finetune_loss = []
+      for n_tune_points in  args.n_fine_tune_points:
+        erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
@@ -425,8 +429,8 @@ if __name__ == '__main__':
     print("adp_invar anti-causal test...")
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-    print("adp_invar anti-causal test val ...")
-    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    # print("adp_invar anti-causal test val ...")
+    # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
     # adp_invar_anti_causal_base_loss_val = 0
 
     if args.hyper_param_tuning:
@@ -447,15 +451,20 @@ if __name__ == '__main__':
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if args.run_fine_tune_test:
-      for n_finetune_loop in [10, 20, 30, 50, 100]:
-        print(n_finetune_loop)
-        trainer.config.n_finetune_loop = n_finetune_loop
-        for learning_rate in [1e-1, 1e-2, 1e-3]:
-          print("learning rate:" + str(learning_rate))
-          trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
-          anti_causal_finetune_loss = []
-          for n_tune_points in  args.n_fine_tune_points:
-            anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
+      if False:
+        for n_finetune_loop in [10, 20, 30, 50, 100]:
+          print(n_finetune_loop)
+          trainer.config.n_finetune_loop = n_finetune_loop
+          for learning_rate in [1e-1, 1e-2, 1e-3]:
+            print("learning rate:" + str(learning_rate))
+            trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+            anti_causal_finetune_loss = []
+            for n_tune_points in  args.n_fine_tune_points:
+              anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
+      else:
+        anti_causal_finetune_loss = []
+        for n_tune_points in  args.n_fine_tune_points:
+          anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
@@ -516,6 +525,7 @@ if __name__ == '__main__':
       row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
       if args.run_fine_tune_test:
         for i, n_tune_points in enumerate(args.n_fine_tune_points):
+          row.append(erm_finetune_loss[i])
           row.append(maml_finetune_loss[i])
           row.append(anti_causal_finetune_loss[i])
           row.append(causal_proj_gd_losses[i])

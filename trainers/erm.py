@@ -45,14 +45,18 @@ class ERM():
         print(loss.item()/(n_train_envs*batch_size))
         print(loss_print.item()/count)
 
-  def test(self, test_dataset, batch_size = 32):
-    
-    self.model.eval()
+  def test(self, test_dataset, input_model = None, batch_size = 32, print_flag = True):
+
+    test_model = self.model
+    if input_model is not None:
+      test_model = input_model
+
+    test_model.eval()
     loss = 0
     total = 0
-    
+
     for x, y in batchify(test_dataset, batch_size, self.config):
-      f_beta, _ = self.model(x)
+      f_beta, _ = test_model(x)
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
         loss += (predicted == y).sum()
@@ -60,5 +64,28 @@ class ERM():
         loss += self.criterion(f_beta, y) * y.size(0) 
 
       total += y.size(0)
-    print(f"Bse Test Error {loss.item()/total} ")
+    if print_flag:
+      print(f"Bse Test Error {loss.item()/total} ") 
     return loss.item()/total
+
+
+  def finetune_test(self, test_finetune_dataset, batch_size = 32):
+    model = copy.deepcopy(self.model)
+    param_to_update_inner_loop  = model.beta
+    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=1e-2)
+
+    model.train()
+    for i in range(self.config.n_finetune_loop):
+      batch_num = 0
+      for x, y in batchify(test_finetune_dataset, batch_size, self.config):
+        loss = 0
+        batch_num += 1
+
+        f_beta, _ = model(x)
+        loss += self.criterion(f_beta, y) 
+
+        self.test_inner_optimizer.zero_grad()
+        loss.backward()
+        self.test_inner_optimizer.step()
+
+    return model
