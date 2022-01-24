@@ -11,7 +11,7 @@ def run_cmd(cmd):
 	logging.info("Running command: {:}".format(cmd))
 	subprocess.check_call(cmd,shell=True)
 
-log_directory = "./log_syn_color_mnist"
+log_directory = "./log_erm_color_mnist"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
