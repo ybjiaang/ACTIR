@@ -51,10 +51,10 @@ if __name__ == '__main__':
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 10, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 1, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
-  parser.add_argument('--gamma', type=float, default= 0.7, help='interpolation parmameter')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 1000, help='regularization coeff for irm')
+  parser.add_argument('--reg_lambda', type=float, default= 8, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 1.5, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
@@ -210,7 +210,7 @@ if __name__ == '__main__':
                 d_out=None,
                 **args.model_kwargs)
     # args.phi_odim = Phi.d_out
-    args.phi_odim = 4
+    args.phi_odim = 16
     lin = nn.Linear(feature.d_out, args.phi_odim)
     Phi = nn.Sequential(feature, lin)
 
@@ -338,8 +338,8 @@ if __name__ == '__main__':
     print("erm test...")
     erm_loss = trainer.test(test_dataset)
 
-    # print("erm val...")
-    # erm_loss_val = trainer.test(val_dataset)
+    print("erm val...")
+    erm_loss_val = trainer.test(val_dataset)
 
     if args.print_base_graph: 
       # check if the base classifer match after training
@@ -430,7 +430,7 @@ if __name__ == '__main__':
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
     # print("adp_invar anti-causal test val ...")
-    # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
     # adp_invar_anti_causal_base_loss_val = 0
 
     if args.hyper_param_tuning:
@@ -451,7 +451,7 @@ if __name__ == '__main__':
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if args.run_fine_tune_test:
-      if False:
+      if True:
         for n_finetune_loop in [10, 20, 30, 50, 100]:
           print(n_finetune_loop)
           trainer.config.n_finetune_loop = n_finetune_loop
