@@ -45,7 +45,7 @@ def set_seed(seed):
   torch.backends.cudnn.benchmark = False
 
 if __name__ == '__main__':
-  set_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -338,8 +338,8 @@ if __name__ == '__main__':
     print("erm test...")
     erm_loss = trainer.test(test_dataset)
 
-    print("erm val...")
-    erm_loss_val = trainer.test(val_dataset)
+    # print("erm val...")
+    # erm_loss_val = trainer.test(val_dataset)
 
     if args.print_base_graph: 
       # check if the base classifer match after training
@@ -430,8 +430,8 @@ if __name__ == '__main__':
     adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
     # print("adp_invar anti-causal test val ...")
-    adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
-    # adp_invar_anti_causal_base_loss_val = 0
+    # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+    adp_invar_anti_causal_base_loss_val = 0
 
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
@@ -451,7 +451,7 @@ if __name__ == '__main__':
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if args.run_fine_tune_test:
-      if True:
+      if False:
         for n_finetune_loop in [10, 20, 30, 50, 100]:
           print(n_finetune_loop)
           trainer.config.n_finetune_loop = n_finetune_loop
