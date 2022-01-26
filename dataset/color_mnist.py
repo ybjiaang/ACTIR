@@ -13,6 +13,7 @@ class ColorMnist(object):
         self.test_finetune_size = test_finetune_size
         self.test_unlabled_size = test_unlabled_size
         self.input_dim = 2 * 14 * 14
+        self.num_class = 2
 
         mnist = datasets.MNIST('~/dataset/mnist', train=True, download=True)
 
@@ -22,8 +23,8 @@ class ColorMnist(object):
         
         # train data
         self.train_data_by_season = [
-            self.make_environment(mnist_train[0][::2], mnist_train[1][::2], 0.2),
-            self.make_environment(mnist_train[0][1::2], mnist_train[1][1::2], 0.1),
+            self.make_environment(mnist_train[0][::2], mnist_train[1][::2], 0.3),
+            self.make_environment(mnist_train[0][1::2], mnist_train[1][1::2], 0.05),
         ]
 
         # val data
@@ -55,7 +56,8 @@ class ColorMnist(object):
         images = torch.stack([images, images], dim=1)
         images[torch.tensor(range(len(images))), (1-colors).long(), :, :] *= 0    
 
-        return (images.reshape((-1, 2*14*14)).float() / 255., labels[:,None])
+        return (images.reshape((-1, 2*14*14)).float() / 255., labels.long())
+        # return (images.reshape((-1, 2*14*14)).float() / 255., labels[:, None])
 
     def sample_envs(self, env_ind=0, train_val_test = 0):
         # train
