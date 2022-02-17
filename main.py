@@ -190,7 +190,7 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    hidden_dims = 256
+    hidden_dims = 512
     lin1 = nn.Linear(input_dim, hidden_dims)
     lin2 = nn.Linear(hidden_dims, hidden_dims)
     lin3 = nn.Linear(hidden_dims, phi_odim)
@@ -205,26 +205,26 @@ if __name__ == '__main__':
             'pretrained': True,
         }
 
-    feature = initialize_torchvision_model(
-                name='resnet18',
-                d_out=None,
-                **args.model_kwargs)
-    # args.phi_odim = Phi.d_out
-    print(feature.d_out)
-    args.phi_odim = 16
-    lin = nn.Linear(feature.d_out, args.phi_odim)
-    Phi = nn.Sequential(feature, lin)
+    # feature = initialize_torchvision_model(
+    #             name='resnet18',
+    #             d_out=None,
+    #             **args.model_kwargs)
+    # # args.phi_odim = Phi.d_out
+    # print(feature.d_out)
+    # args.phi_odim = 16
+    # lin = nn.Linear(feature.d_out, args.phi_odim)
+    # Phi = nn.Sequential(feature, lin)
 
   
-    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
-    # hidden_dims = 256
-    # lin1 = nn.Linear(input_dim, hidden_dims)
-    # lin2 = nn.Linear(hidden_dims, hidden_dims)
-    # lin3 = nn.Linear(hidden_dims, phi_odim)
-    # for lin in [lin1, lin2, lin3]:
-    #     nn.init.xavier_uniform_(lin.weight)
-    #     nn.init.zeros_(lin.bias)
-    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
+    hidden_dims = 256
+    lin1 = nn.Linear(input_dim, hidden_dims)
+    lin2 = nn.Linear(hidden_dims, hidden_dims)
+    lin3 = nn.Linear(hidden_dims, phi_odim)
+    for lin in [lin1, lin2, lin3]:
+        nn.init.xavier_uniform_(lin.weight)
+        nn.init.zeros_(lin.bias)
+    Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
@@ -355,9 +355,20 @@ if __name__ == '__main__':
       plt.savefig("png_folder/erm_comparision_after.png")
 
     if args.run_fine_tune_test:
-      erm_finetune_loss = []
-      for n_tune_points in  args.n_fine_tune_points:
-        erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+      for n_finetune_loop in [1, 2, 10, 20, 30, 50, 100]:
+        print(n_finetune_loop)
+        trainer.config.n_finetune_loop = n_finetune_loop
+        for learning_rate in [1e-2, 1e-3]:
+          print("learning rate:" + str(learning_rate))
+          # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+          trainer.fine_tune_lr = learning_rate
+          erm_finetune_loss = []
+          for n_tune_points in  args.n_fine_tune_points:
+            erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
+      
+      # erm_finetune_loss = []
+      # for n_tune_points in  args.n_fine_tune_points:
+      #   erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
