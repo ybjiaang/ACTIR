@@ -14,7 +14,8 @@ class ERM():
 
     # define loss
     self.criterion = loss_fn
-    self.fine_tune_lr = 1e-2
+
+    self.fine_inner_lr = 1e-2
 
     # optimizer
     self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
@@ -66,14 +67,17 @@ class ERM():
 
       total += y.size(0)
     if print_flag:
-      print(f"Bse Test Error {loss.item()/total} ") 
+      print(f"Bse Test Error {loss.item()/total} ")
+    if input_model is None:
+        torch.save(self.model, "./erm.model") 
     return loss.item()/total
 
 
   def finetune_test(self, test_finetune_dataset, batch_size = 32):
     model = copy.deepcopy(self.model)
     param_to_update_inner_loop  = model.beta
-    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_tune_lr)
+
+    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 
     model.train()
     for i in range(self.config.n_finetune_loop):

@@ -15,6 +15,7 @@ class LinearMAML():
 
     # define loss
     self.criterion = loss_fn
+    self.fine_inner_lr = 1e-2
 
     # define optimizer
     self.param_to_update_inner_loop = [self.model.beta]
@@ -97,7 +98,32 @@ class LinearMAML():
 
   def finetune_test(self, test_finetune_dataset, batch_size = 32):
     model = copy.deepcopy(self.model)
-    # param_to_update_inner_loop  = model.beta
+# <<<<<<< HEAD
+#     # param_to_update_inner_loop  = model.beta
+# =======
+    param_to_update_inner_loop  = model.beta
+    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
+
+    model.train()
+    for i in range(self.config.n_finetune_loop):
+      batch_num = 0
+      for x, y in batchify(test_finetune_dataset, batch_size, self.config):
+        loss = 0
+        batch_num += 1
+
+        f_beta, _ = model(x)
+        loss += self.criterion(f_beta, y)
+
+        self.test_inner_optimizer.zero_grad()
+        loss.backward()
+        self.test_inner_optimizer.step()
+
+    fast_weights = [model.beta]
+
+    return (model, fast_weights)    
+    
+    model = copy.deepcopy(self.model)
+    param_to_update_inner_loop  = model.beta
 
     # loss = 0
     # for x, y in batchify(test_finetune_dataset, batch_size, self.config):

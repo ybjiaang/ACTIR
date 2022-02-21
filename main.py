@@ -205,13 +205,21 @@ if __name__ == '__main__':
             'pretrained': True,
         }
 
-    # feature = initialize_torchvision_model(
-    #             name='resnet18',
-    #             d_out=None,
-    #             **args.model_kwargs)
-    # # args.phi_odim = Phi.d_out
-    # print(feature.d_out)
-    # args.phi_odim = 16
+# <<<<<<< HEAD
+#     # feature = initialize_torchvision_model(
+#     #             name='resnet18',
+#     #             d_out=None,
+#     #             **args.model_kwargs)
+#     # # args.phi_odim = Phi.d_out
+#     # print(feature.d_out)
+#     # args.phi_odim = 16
+# =======
+    Phi = initialize_torchvision_model(
+                name='resnet18',
+                d_out=128,
+                **args.model_kwargs)
+    args.phi_odim = Phi.d_out
+    # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)
     # Phi = nn.Sequential(feature, lin)
 
@@ -355,20 +363,17 @@ if __name__ == '__main__':
       plt.savefig("png_folder/erm_comparision_after.png")
 
     if args.run_fine_tune_test:
-      for n_finetune_loop in [1, 2, 10, 20, 30, 50, 100]:
-        print(n_finetune_loop)
-        trainer.config.n_finetune_loop = n_finetune_loop
-        for learning_rate in [1e-2, 1e-3]:
-          print("learning rate:" + str(learning_rate))
-          # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
-          trainer.fine_tune_lr = learning_rate
-          erm_finetune_loss = []
-          for n_tune_points in  args.n_fine_tune_points:
-            erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
-      
-      # erm_finetune_loss = []
-      # for n_tune_points in  args.n_fine_tune_points:
-      #   erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+        for n_finetune_loop in [1, 2, 100, 5, 30, 50]:
+            print(n_finetune_loop)
+            trainer.config.n_finetune_loop = n_finetune_loop
+            for learning_rate in [1e-2, 1e-3]:
+                print("learning rate:" + str(learning_rate))
+                trainer.fine_inner_lr = learning_rate
+                # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+            # anti_causal_finetune_loss = []
+                erm_finetune_loss = []
+                for n_tune_points in  args.n_fine_tune_points:
+                    erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
@@ -395,6 +400,7 @@ if __name__ == '__main__':
     print("maml training...")
     maml_train_loss = trainer.train(train_dataset, args.batch_size)
 
+    torch.save(trainer.model, './maml.pt')
     print("maml test...")
     maml_loss = trainer.test(test_dataset)
 
@@ -410,9 +416,20 @@ if __name__ == '__main__':
       plt.savefig("png_folder/maml_comparision_after.png")
 
     if args.run_fine_tune_test:
-      maml_finetune_loss = []
-      for n_tune_points in  args.n_fine_tune_points:
-        maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+        for n_finetune_loop in [1, 2, 100, 5, 30, 50]:
+            print(n_finetune_loop)
+            trainer.config.n_finetune_loop = n_finetune_loop
+            for learning_rate in [1e-2, 1e-3]:
+                print("learning rate:" + str(learning_rate))
+                # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+                trainer.fine_inner_lr = learning_rate
+            # anti_causal_finetune_loss = []
+                maml_finetune_loss = []
+                for n_tune_points in  args.n_fine_tune_points:
+                    maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+      # maml_finetune_loss = []
+      # for n_tune_points in  args.n_fine_tune_points:
+      #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
@@ -464,11 +481,11 @@ if __name__ == '__main__':
       plt.savefig("png_folder/adp_invar_anti_causal_comparision_after.png")
 
     if args.run_fine_tune_test:
-      if False:
-        for n_finetune_loop in [10, 20, 30, 50, 100]:
+      if True:
+        for n_finetune_loop in [1, 2, 5, 100, 10, 20, 30, 50]:
           print(n_finetune_loop)
           trainer.config.n_finetune_loop = n_finetune_loop
-          for learning_rate in [1e-1, 1e-2, 1e-3]:
+          for learning_rate in [1e-2, 1e-3]:
             print("learning rate:" + str(learning_rate))
             trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
             anti_causal_finetune_loss = []
@@ -503,10 +520,13 @@ if __name__ == '__main__':
 
     print("adp_invar training...")
     trainer.train(train_dataset, args.batch_size)
-
+    trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=le-3)
+    torch.save(trainer.model, './anti.pt')
     print("adp_invar test...")
     adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
 
+    trainer.config.n_finetune_loop = 2
+    
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
         writer = csv.writer(file)

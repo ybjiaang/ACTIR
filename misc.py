@@ -123,7 +123,7 @@ def ConditionalCovaraince(x, y):
 
   return estimate / n
 
-def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
+def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=True):
   m,_ = x.shape #batch size
   K = GaussianKernelMatrix(x,s_x)
   L = GaussianKernelMatrix(y,s_y)
