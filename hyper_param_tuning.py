@@ -37,6 +37,14 @@ for reg_lambda in np.logspace(-1, 4, num=30):
             # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)
 
+            # synthetical anti-causal multi-class classification
+            # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            # run_cmd(cmd)
+
+
+            cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            run_cmd(cmd)
+
             # # synthetic causal
             # cmd = 'python main.py --model_name=adp_invar --causal_dir_syn=causal --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)
@@ -47,8 +55,8 @@ for reg_lambda in np.logspace(-1, 4, num=30):
             # cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=color_mnist --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)
 
-            cmd = 'python main.py --classification --n_outer_loop=50 --model_name=adp_invar_anti_causal --dataset=color_mnist --phi_odim=8 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
-            run_cmd(cmd)
+            # cmd = 'python main.py --classification --n_outer_loop=50 --model_name=adp_invar_anti_causal --dataset=color_mnist --phi_odim=8 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+            # run_cmd(cmd)
 
             # cmd = 'python main.py --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --n_outer_loop 25 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
             # run_cmd(cmd)

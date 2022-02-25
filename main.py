@@ -21,7 +21,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-from dataset.syn_env import CausalAdditiveNoSpurious, AntiCausal, CausalControlDataset, AntiCausalControlDataset
+from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, AntiCausalControlDatasetMultiClass
 from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
 from dataset.camelyon17 import Camelyon17
@@ -45,15 +45,15 @@ def set_seed(seed):
   torch.backends.cudnn.benchmark = False
 
 if __name__ == '__main__':
-  set_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 573.6152510448682, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 7.742636826811269, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 3593.81366380462, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 1, help='regularization coeff for irm')
+  parser.add_argument('--reg_lambda', type=float, default= 7.880462815669913, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 0.3562247890262442, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.7, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
@@ -73,7 +73,7 @@ if __name__ == '__main__':
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, camelyon17')
   
   # synthetic dataset specifics
-  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
+  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi')
   parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
 
   # bike sharing specifics
@@ -93,7 +93,7 @@ if __name__ == '__main__':
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {args.device} device")
-  print(args.reg_lambda, args.reg_lambda_2)
+  print(args.reg_lambda, args.reg_lambda_2, args.n_outer_loop)
 
   # create datasets
   if args.dataset == "syn":
@@ -105,6 +105,10 @@ if __name__ == '__main__':
       print("Sampling from causal anti datasets")
       # env = AntiCausal()
       env = AntiCausalControlDataset()
+
+    if args.causal_dir_syn == "anti-multi":
+      print("Sampling from causal anti multi-class datasets")
+      env = AntiCausalControlDatasetMultiClass()  
 
     args.n_envs = env.num_train_evns
 
@@ -169,6 +173,9 @@ if __name__ == '__main__':
   if args.classification:
     out_dim = env.num_class
     args.num_class = env.num_class
+    if out_dim > phi_odim:
+      args.phi_odim = out_dim
+      phi_odim = args.phi_odim
   else:
     out_dim = 1
     args.num_class = 1
@@ -256,12 +263,12 @@ if __name__ == '__main__':
       plt.legend()
       plt.savefig("png_folder/hsci_comparision_before.png")
 
-    # print("hsic training...")
-    # trainer.train(train_dataset, args.batch_size)
+    print("hsic training...")
+    trainer.train(train_dataset, args.batch_size)
 
-    # print("hsic test...")
-    # hsic_loss = trainer.test(test_dataset)
-    hsic_loss = 0
+    print("hsic test...")
+    hsic_loss = trainer.test(test_dataset)
+    # hsic_loss = 0
 
     if args.print_base_graph: 
       # check if the base classifer match after training
@@ -363,10 +370,10 @@ if __name__ == '__main__':
       plt.savefig("png_folder/erm_comparision_after.png")
 
     if args.run_fine_tune_test:
-        for n_finetune_loop in [1, 2, 100, 5, 30, 50]:
+        for n_finetune_loop in [20]:
             print(n_finetune_loop)
             trainer.config.n_finetune_loop = n_finetune_loop
-            for learning_rate in [1e-2, 1e-3]:
+            for learning_rate in [1e-2]:
                 print("learning rate:" + str(learning_rate))
                 trainer.fine_inner_lr = learning_rate
                 # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
@@ -416,10 +423,10 @@ if __name__ == '__main__':
       plt.savefig("png_folder/maml_comparision_after.png")
 
     if args.run_fine_tune_test:
-        for n_finetune_loop in [1, 2, 100, 5, 30, 50]:
+        for n_finetune_loop in [20]:
             print(n_finetune_loop)
             trainer.config.n_finetune_loop = n_finetune_loop
-            for learning_rate in [1e-2, 1e-3]:
+            for learning_rate in [1e-2]:
                 print("learning rate:" + str(learning_rate))
                 # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
                 trainer.fine_inner_lr = learning_rate
@@ -466,7 +473,7 @@ if __name__ == '__main__':
     if args.hyper_param_tuning:
       with open(args.cvs_dir, 'a', newline='') as file: 
         writer = csv.writer(file)
-        row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_anti_causal_base_loss, adp_invar_anti_causal_base_loss_val]
+        row = [args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, adp_invar_anti_causal_base_loss, adp_invar_anti_causal_base_loss_val]
         writer.writerow(row)
 
     if args.print_base_graph: 
@@ -482,10 +489,10 @@ if __name__ == '__main__':
 
     if args.run_fine_tune_test:
       if True:
-        for n_finetune_loop in [1, 2, 5, 100, 10, 20, 30, 50]:
+        for n_finetune_loop in [20]:
           print(n_finetune_loop)
           trainer.config.n_finetune_loop = n_finetune_loop
-          for learning_rate in [1e-2, 1e-3]:
+          for learning_rate in [1e-2]:
             print("learning rate:" + str(learning_rate))
             trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
             anti_causal_finetune_loss = []
@@ -520,7 +527,7 @@ if __name__ == '__main__':
 
     print("adp_invar training...")
     trainer.train(train_dataset, args.batch_size)
-    trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=le-3)
+    trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
     torch.save(trainer.model, './anti.pt')
     print("adp_invar test...")
     adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)

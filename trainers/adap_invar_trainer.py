@@ -66,13 +66,15 @@ class AdaptiveInvariantNNTrainer():
         # reg_loss = 0
         # for i in range(self.num_class):
         #   reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
-        reg_loss = HSICLoss(f_beta, f_eta)
+        # reg_loss = HSICLoss(f_beta, f_eta)
+        reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
       else:
         # reg_loss = 0
         # for i in range(self.num_class):
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        # reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
         # print(reg_loss)
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
@@ -96,8 +98,9 @@ class AdaptiveInvariantNNTrainer():
     return loss
   
   def contraint_loss(self, f_beta, f_eta, y, env_ind):
-    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
-
+    reg_loss = self.reg_loss(f_beta, f_eta, y, env_ind)
+    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
+    # print(reg_loss.item())
     return loss
     
   # Define training Loop
@@ -116,10 +119,11 @@ class AdaptiveInvariantNNTrainer():
         for env_ind in range(n_train_envs):
             x, y = train[env_ind]
             f_beta, f_eta, _ = self.model(x, env_ind)
+            # print(self.reg_loss(x[:,[0]], x[:,[1]], y, env_ind).item())
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
             phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
-
+            # print(f_beta , f_eta)
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()

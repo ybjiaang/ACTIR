@@ -20,7 +20,7 @@ filename = log_directory + "/" + "test_causal"+ ".csv"
 if os.path.exists(filename):
     os.remove(filename)
 
-n_fine_tune_points = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n_fine_tune_points = [1, 5, 10]
 with open(filename, 'a', newline='') as file: 
     writer = csv.writer(file)
     colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal", "Causal Base", "Causal"]
@@ -33,7 +33,8 @@ with open(filename, 'a', newline='') as file:
     writer.writerow(colname)
 
 for _ in range(100):
-    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=causal --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)

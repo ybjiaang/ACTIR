@@ -39,6 +39,11 @@ class AdaptiveInvariantNN(nn.Module):
     else:
       f_eta = rep @ fast_eta[0]
 
+    # print(f_beta.detach().numpy())
+    # f_beta = f_beta / torch.linalg.norm(f_beta, dim=1, keepdim=True)
+    # print(f_beta.detach().numpy())
+    # f_eta = f_eta / torch.linalg.norm(f_eta, dim=1, keepdim=True)
+
     return f_beta, f_eta, rep
 
   def sample_base_classifer(self, x):
