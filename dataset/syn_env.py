@@ -3,6 +3,14 @@ import torch
 from torch import nn
 import math
 from torch.autograd import Variable
+from sklearn import preprocessing
+
+# importing sys
+import sys
+
+sys.path.insert(0, '../')
+
+from misc import DiscreteConditionalExpecationTest
 
 # generating data
 class Envs(object):
@@ -77,16 +85,16 @@ class AntiCausalControlDatasetMultiClass(Envs):
     super(AntiCausalControlDatasetMultiClass, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.9, 0.8, 0.2, 0.1]
+    self.env_means = [0.9, 0.7, 0.2, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
-    self.num_class = 5
+    self.num_class = 4
 
   def sample_envs(self, env_ind, n = 100):
     y = np.random.randint(self.num_class, size=(n,1))
     factor = np.random.binomial(1, 0.65, (n,1))
-    x_z_perp = y * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1))
+    x_z_perp = y * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1)) 
     # x_z_perp = (2*y - 1) * (2* factor - 1)
     # x_z_perp = y * (2* factor - 1)
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
@@ -94,8 +102,13 @@ class AntiCausalControlDatasetMultiClass(Envs):
     # z = (2*y - 1) * (2* factor - 1)
     # z = y * (2* factor - 1)
     x_y_perp = z
+
+    np_array = np.concatenate([x_z_perp, x_y_perp], axis=1)
+    normalized_arr = preprocessing.normalize(np_array)
+    normalized_arr -= normalized_arr.mean(axis=0)
+    # print(normalized_arr)
     
-    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)),torch.Tensor(y) #torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) #
+    return torch.Tensor(normalized_arr),torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) #
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")
@@ -109,6 +122,4 @@ class AntiCausalControlDatasetMultiClass(Envs):
 if __name__ == '__main__':
   env = AntiCausalControlDatasetMultiClass()
   x, y = env.sample_envs(0, n = 100)
-  print(x[:,0])
-  print(x[:,1])
-  print(y)
+  print(torch.pow(torch.sum(DiscreteConditionalExpecationTest(x[:,[0]], x[:,[1]], y)),2))

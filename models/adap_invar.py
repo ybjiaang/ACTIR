@@ -30,6 +30,8 @@ class AdaptiveInvariantNN(nn.Module):
     # Define \eta
     self.etas = nn.ParameterList([torch.nn.Parameter(torch.zeros(self.phi_odim, out_dim), requires_grad = True) for i in range(n_batch_envs)]) 
 
+    self.softmax_layer = nn.Softmax(dim=-1)
+
   def forward(self, x, env_ind, fast_eta = None):
     rep = self.Phi(x)
 
@@ -39,10 +41,8 @@ class AdaptiveInvariantNN(nn.Module):
     else:
       f_eta = rep @ fast_eta[0]
 
-    # print(f_beta.detach().numpy())
-    # f_beta = f_beta / torch.linalg.norm(f_beta, dim=1, keepdim=True)
-    # print(f_beta.detach().numpy())
-    # f_eta = f_eta / torch.linalg.norm(f_eta, dim=1, keepdim=True)
+    # f_beta = torch.nn.functional.log_softmax(f_beta, dim=1)
+    # f_eta = torch.nn.functional.log_softmax(f_eta, dim=1)
 
     return f_beta, f_eta, rep
 

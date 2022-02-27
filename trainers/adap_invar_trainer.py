@@ -33,7 +33,7 @@ class AdaptiveInvariantNNTrainer():
     # during test, use the first eta
     self.eta_test_ind = 0
 
-    self.softmax = nn.Softmax(dim=1)
+    self.softmax_layer = nn.Softmax(dim=-1)
 
   def calculate_eta(self, x, y, b):
     """ 
@@ -66,15 +66,17 @@ class AdaptiveInvariantNNTrainer():
         # reg_loss = 0
         # for i in range(self.num_class):
         #   reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
-        # reg_loss = HSICLoss(f_beta, f_eta)
-        reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
+        reg_loss = HSICLoss(f_beta, f_eta)
+        # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
+        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
       else:
         # reg_loss = 0
         # for i in range(self.num_class):
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
-        reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
+        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
+        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean()
         # print(reg_loss)
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
@@ -90,23 +92,25 @@ class AdaptiveInvariantNNTrainer():
     
     return reg_loss
 
-  def inner_loss(self, x, y, env_ind):
-    f_beta, f_eta, _ = self.model(x, env_ind)
+  # def inner_loss(self, x, y, env_ind):
+  #   f_beta, f_eta, _ = self.model(x, env_ind)
       
-    loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
+  #   loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
 
-    return loss
+  #   return loss
   
   def contraint_loss(self, f_beta, f_eta, y, env_ind):
+    # f_beta_normalized = torch.nn.functional.log_softmax(f_beta, dim=1)
+    # f_eta_normalized = torch.nn.functional.log_softmax(f_eta, dim=1)
     reg_loss = self.reg_loss(f_beta, f_eta, y, env_ind)
     loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
-    # print(reg_loss.item())
     return loss
     
   # Define training Loop
   def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
     n_train_envs = len(train_dataset)
 
+    self.model.freeze_all_but_beta()
     self.model.train()
 
     for t in tqdm(range(self.config.n_outer_loop)):
@@ -114,7 +118,6 @@ class AdaptiveInvariantNNTrainer():
 
         # update phi
         # self.model.freeze_all_but_phi()
-        self.model.freeze_all_but_beta()
         phi_loss = 0
         for env_ind in range(n_train_envs):
             x, y = train[env_ind]
