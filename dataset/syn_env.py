@@ -103,10 +103,13 @@ class AntiCausalControlDatasetMultiClass(Envs):
     # z = y * (2* factor - 1)
     x_y_perp = z
 
-    np_array = np.concatenate([x_z_perp, x_y_perp], axis=1)
-    normalized_arr = preprocessing.normalize(np_array)
+    normalized_arr = np.concatenate([x_z_perp, x_y_perp], axis=1).astype(np. float)
+    # normalized_arr = preprocessing.normalize(normalized_arr)
     normalized_arr -= normalized_arr.mean(axis=0)
+    normalized_arr /= normalized_arr.max(axis=0)
     # print(normalized_arr)
+    # print(x_z_perp)
+    # print(y)
     
     return torch.Tensor(normalized_arr),torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) #
   
