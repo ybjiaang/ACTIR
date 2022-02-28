@@ -25,7 +25,8 @@ class AdaptiveInvariantNNTrainer():
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #, weight_decay=1e-2)
+    # self.outer_optimizer = torch.optim.SGD(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
     self.reg_lambda_2 = config.reg_lambda_2
@@ -87,7 +88,8 @@ class AdaptiveInvariantNNTrainer():
       else:
         # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) # pow does not work
+        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) # pow does not work
+        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) #.pow(2).mean()
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
     
     return reg_loss
@@ -102,8 +104,14 @@ class AdaptiveInvariantNNTrainer():
   def contraint_loss(self, f_beta, f_eta, y, env_ind):
     # f_beta_normalized = torch.nn.functional.log_softmax(f_beta, dim=1)
     # f_eta_normalized = torch.nn.functional.log_softmax(f_eta, dim=1)
+    # reg_loss = self.reg_loss(f_beta_normalized, f_eta_normalized, y, env_ind)
     reg_loss = self.reg_loss(f_beta, f_eta, y, env_ind)
     loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
+    # print(f_beta)
+    # # print(f_eta)
+    # print(f_beta + f_eta)
+    # print(y)
+    # print(reg_loss.item())
     return loss
     
   # Define training Loop
@@ -119,20 +127,34 @@ class AdaptiveInvariantNNTrainer():
         # update phi
         # self.model.freeze_all_but_phi()
         phi_loss = 0
+        loss = 0
+        total = 0
+        base_loss = 0
         for env_ind in range(n_train_envs):
             x, y = train[env_ind]
             f_beta, f_eta, _ = self.model(x, env_ind)
             # print(self.reg_loss(x[:,[0]], x[:,[1]], y, env_ind).item())
+            # print(x)
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
             phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
             # print(f_beta , f_eta)
+            if self.classification:
+              _, base_predicted = torch.max(f_beta.data, 1)
+              base_loss += (base_predicted == y).sum()
+              _, predicted = torch.max((f_beta + f_eta).data, 1)
+              loss += (predicted == y).sum()
+              total += y.size(0)
+
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
       
       if t % 10 == 0 and self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
+        if self.classification:
+          print(f"Bse Test Error {base_loss.item()/total} ")
+          print(f"Test loss {loss.item()/total} ")
 
   def test(self, test_dataset, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])

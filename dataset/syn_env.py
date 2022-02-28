@@ -85,33 +85,29 @@ class AntiCausalControlDatasetMultiClass(Envs):
     super(AntiCausalControlDatasetMultiClass, self).__init__()
     self.d_x_z_perp = d_x_z_perp
     self.d_x_y_perp = d_x_y_perp
-    self.env_means = [0.9, 0.7, 0.2, 0.1]
+    self.env_means = [0.9, 0.8, 0.2, 0.1]
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
-    self.num_class = 4
+    self.num_class = 5
 
   def sample_envs(self, env_ind, n = 100):
     y = np.random.randint(self.num_class, size=(n,1))
     factor = np.random.binomial(1, 0.65, (n,1))
-    x_z_perp = y * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1)) 
+    x_z_perp = (y) * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1)) 
     # x_z_perp = (2*y - 1) * (2* factor - 1)
     # x_z_perp = y * (2* factor - 1)
     factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    z = y * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1))
+    z = (y) * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1))
     # z = (2*y - 1) * (2* factor - 1)
     # z = y * (2* factor - 1)
     x_y_perp = z
 
-    normalized_arr = np.concatenate([x_z_perp, x_y_perp], axis=1).astype(np. float)
-    # normalized_arr = preprocessing.normalize(normalized_arr)
-    normalized_arr -= normalized_arr.mean(axis=0)
-    normalized_arr /= normalized_arr.max(axis=0)
-    # print(normalized_arr)
-    # print(x_z_perp)
-    # print(y)
+    normalized_arr = np.concatenate([x_z_perp, x_y_perp], axis=1).astype(np.float)
+    # normalized_arr -= normalized_arr.mean(axis=0)
+    # normalized_arr /= normalized_arr.max(axis=0)
     
-    return torch.Tensor(normalized_arr),torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) #
+    return torch.Tensor(normalized_arr), torch.Tensor(y) #torch.squeeze(torch.Tensor(y).long()) # 
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")
