@@ -89,11 +89,11 @@ class AntiCausalControlDatasetMultiClass(Envs):
     self.num_total_envs = len(self.env_means)
     self.num_train_evns = self.num_total_envs - 2
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
-    self.num_class = 4
+    self.num_class = 3
 
   def sample_envs(self, env_ind, n = 100):
     y = np.random.randint(self.num_class, size=(n,1))
-    factor = np.random.binomial(1, 0.65, (n,1))
+    factor = np.random.binomial(1, 0.75, (n,1))
     x_z_perp = (y) * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1)) 
     # x_z_perp = (y * (y >=2)) * factor + (1 - factor) * np.random.randint(self.num_class, size=(n,1)) 
 
@@ -107,7 +107,7 @@ class AntiCausalControlDatasetMultiClass(Envs):
     normalized_arr -= normalized_arr.mean(axis=0)
     normalized_arr /= normalized_arr.max(axis=0)
     
-    return torch.Tensor(normalized_arr), torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) #
+    return torch.Tensor(normalized_arr), torch.squeeze(torch.Tensor(y).long()) #torch.Tensor(y) 
   
   def sample_base_classifer(self, x):
    raise Exception("This does not work")

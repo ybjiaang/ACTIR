@@ -24,12 +24,12 @@ def run_cmd(cmd):
 
 # reg_lambda = 0.1
 gamma = 0.9
-for reg_lambda in np.logspace(-1, 3, num=30):
-    for reg_lambda_2 in np.logspace(-1, 2, num=30):
+for reg_lambda in np.logspace(-1, 4, num=50):
+    for reg_lambda_2 in np.logspace(-1, 4, num=50):
 # for reg_lambda in [0.1, 1, 10, 100]:
 #     for reg_lambda_2 in [100, 0.1, 1, 10, 50]:
         # for gamma in [0.7, 0.9]:
-        for gamma in [0.7, 0.9]:
+        for gamma in [0.5, 0.7, 0.9]:
             for n_loop in [100]:
                 # synthetical anti-causal
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
@@ -63,8 +63,11 @@ for reg_lambda in np.logspace(-1, 3, num=30):
                 # run_cmd(cmd)
                 # cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --n_outer_loop 25 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --run_fine_tune_test --n_fine_tune_tests 3 --n_fine_tune_points 1 10 50 100 1000 5000'.format(reg_lambda, reg_lambda_2, filename, gamma)
                 # run_cmd(cmd)
+                # pass
 
-# for reg_lambda in np.logspace(-2, 2, num=5):
-# for reg_lambda in [0.1, 1, 10, 100]:
-#     cmd = 'python main.py --model_name=irm  --dataset=camelyon17 --classification --n_outer_loop 20 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
+# for reg_lambda in np.logspace(-1, 5, num=100):
+# # for reg_lambda in [0.1, 1, 10, 100]:
+#     # cmd = 'python main.py --model_name=irm  --dataset=camelyon17 --classification --n_outer_loop 20 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
+#     # run_cmd(cmd)
+#     cmd = 'python main.py --model_name=irm --causal_dir_syn=anti-multi --classification --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
 #     run_cmd(cmd)

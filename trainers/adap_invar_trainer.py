@@ -5,7 +5,7 @@ import copy
 from tqdm import tqdm
 from torch.autograd import grad
 
-from misc import batchify, HSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
+from misc import batchify, HSICLoss, DiscreteConditionalLinearHSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
 class AdaptiveInvariantNNTrainer():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -75,12 +75,13 @@ class AdaptiveInvariantNNTrainer():
         # for i in range(self.num_class):
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        reg_loss = DiscreteConditionalLinearHSICLoss(f_beta, f_eta, y)
+        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
         # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
         # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean() 
-        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean()
         # print(reg_loss)
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
+        # reg_loss = torch.norm(ConditionalCovaraince(f_beta, f_eta, y))
     else:
       if self.causal_dir:
         # reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
@@ -138,9 +139,9 @@ class AdaptiveInvariantNNTrainer():
             # print(x)
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
-            # phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
+            phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
             # print(f_beta , f_eta)
-            phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
+            # phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
             
             if self.classification:
               _, base_predicted = torch.max(f_beta.data, 1)
@@ -177,6 +178,14 @@ class AdaptiveInvariantNNTrainer():
       else:
         loss += self.criterion(f_beta + f_eta, y) * y.size(0)
         base_loss += self.criterion(f_beta, y) * y.size(0)
+        # base_predicted = (torch.squeeze(torch.clamp(f_beta.data, min = 0, max=4) + 0.5) ).int().long()
+        # base_loss += (base_predicted == torch.squeeze(y)).sum()
+        # print(f_beta.data)
+        # print(base_predicted)
+        # print(y)
+        # predicted = (torch.squeeze(torch.clamp((f_beta + f_eta).data, min = 0, max=4) + 0.5) ).int().long()
+        # loss += (predicted == torch.squeeze(y)).sum()
+
       total += y.size(0)
 
     if print_flag: 
