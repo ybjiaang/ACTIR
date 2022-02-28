@@ -24,8 +24,8 @@ def run_cmd(cmd):
 
 # reg_lambda = 0.1
 gamma = 0.9
-for reg_lambda in np.logspace(-1, 3, num=10):
-    for reg_lambda_2 in np.logspace(-1, 3, num=10):
+for reg_lambda in np.logspace(-1, 3, num=30):
+    for reg_lambda_2 in np.logspace(-1, 2, num=30):
 # for reg_lambda in [0.1, 1, 10, 100]:
 #     for reg_lambda_2 in [100, 0.1, 1, 10, 50]:
         # for gamma in [0.7, 0.9]:
@@ -40,11 +40,11 @@ for reg_lambda in np.logspace(-1, 3, num=10):
                 # run_cmd(cmd)
 
                 # synthetical anti-causal multi-class classification
-                # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
-                # run_cmd(cmd)
-
-                cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+                cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
                 run_cmd(cmd)
+
+                # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
+                # run_cmd(cmd)
 
                 # # synthetic causal
                 # cmd = 'python main.py --model_name=adp_invar --causal_dir_syn=causal --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)

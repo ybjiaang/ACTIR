@@ -75,9 +75,10 @@ class AdaptiveInvariantNNTrainer():
         # for i in range(self.num_class):
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
         # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
-        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean()
+        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean() 
+        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean()
         # print(reg_loss)
         # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
     else:
@@ -89,7 +90,7 @@ class AdaptiveInvariantNNTrainer():
         # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) # pow does not work
-        reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) #.pow(2).mean()
+        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y)) #.pow(2).mean()
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
     
     return reg_loss
@@ -137,8 +138,10 @@ class AdaptiveInvariantNNTrainer():
             # print(x)
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
-            phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
+            # phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
             # print(f_beta , f_eta)
+            phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
+            
             if self.classification:
               _, base_predicted = torch.max(f_beta.data, 1)
               base_loss += (base_predicted == y).sum()
