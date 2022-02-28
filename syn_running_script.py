@@ -33,8 +33,8 @@ with open(filename, 'a', newline='') as file:
     writer.writerow(colname)
 
 for _ in range(100):
-    # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
-    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=causal --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)

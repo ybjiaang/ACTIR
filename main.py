@@ -45,7 +45,7 @@ def set_seed(seed):
   torch.backends.cudnn.benchmark = False
 
 if __name__ == '__main__':
-  # set_seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     out_dim = env.num_class
     args.num_class = env.num_class
     if out_dim > phi_odim:
-      args.phi_odim = out_dim
+      args.phi_odim = 2*out_dim
       phi_odim = args.phi_odim
   else:
     out_dim = 1
