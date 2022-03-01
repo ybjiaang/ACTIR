@@ -45,7 +45,7 @@ def set_seed(seed):
   torch.backends.cudnn.benchmark = False
 
 if __name__ == '__main__':
-  # set_seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 

@@ -82,6 +82,10 @@ class AdaptiveInvariantNN(nn.Module):
     for para in self.parameters():
       para.requires_grad = False
 
+  def free_all(self):
+    for para in self.parameters():
+      para.requires_grad = True
+
   def check_var_with_required_grad(self):
     """ Check what paramters are required grad """
     for name, param in self.named_parameters():
