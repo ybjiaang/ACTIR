@@ -52,6 +52,8 @@ class VLCS(MultipleDomainDataset):
             elif i == val_i:
                 self.val_data_list = env_dataset
             else:
+                for i in range(len(env_dataset)):
+                    print(env_dataset[i][0])
                 self.train_data_list.append(env_dataset)
 
         self.input_shape = (3, 224, 224,)
@@ -106,5 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true', help='verbose or not')
     parser.add_argument('--cvs_dir', type=str, default= "./test.cvs", help='path to the cvs file')
     parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
+
+    parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
     args = parser.parse_args()
     env = VLCS(args)

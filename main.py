@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
   # dataset related flags
   args.torch_loader = False
-  args.num_workers = 4
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
