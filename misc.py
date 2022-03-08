@@ -9,11 +9,15 @@ def printModelParam(model):
 
 def itr_merge(itrs, config):
   num_itrs = len(itrs)
-  for i in range(num_itrs): 
-    v_list = []
-    for v in itrs[i]:
-      v_list.append((v[0].to(config.device), v[1].to(config.device)))
-    yield v_list
+  if num_itrs == 1:
+    for v in itrs:
+      yield (v[0].to(config.device), v[1].to(config.device))
+  else:
+    for i in range(num_itrs): 
+      v_list = []
+      for v in itrs[i]:
+        v_list.append((v[0].to(config.device), v[1].to(config.device)))
+      yield v_list
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
@@ -162,7 +166,7 @@ def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
   # HSIC = torch.trace(Rx @ Ry)
   # return HSIC
 
-def LinearHSICLoss(x, y, cuda=False):
+def LinearHSICLoss(x, y, cuda=True):
   m,_ = x.shape #batch size
   K = LinearKernelMatrix(x)
   L = LinearKernelMatrix(y)
