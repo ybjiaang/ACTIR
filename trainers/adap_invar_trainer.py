@@ -120,8 +120,8 @@ class AdaptiveInvariantNNTrainer():
   def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
     n_train_envs = len(train_dataset)
 
-    # self.model.freeze_all_but_beta()
-    self.model.free_all()
+    self.model.freeze_all_but_beta()
+    # self.model.free_all()
     self.model.train()
 
     for t in tqdm(range(self.config.n_outer_loop)):
@@ -141,7 +141,7 @@ class AdaptiveInvariantNNTrainer():
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
             phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
-            phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.beta, create_graph=True)[0].pow(2).mean()
+            # phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.beta, create_graph=True)[0].pow(2).mean()
             # print(f_beta , f_eta)
             # phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
             
