@@ -12,9 +12,7 @@ def itr_merge(itrs, config):
   for i in range(num_itrs): 
     v_list = []
     for v in itrs[i]:
-      for elem in v:
-        elem.to(config.device)
-      v_list.append(v)
+      v_list.append((v[0].to(config.device), v[1].to(config.device)))
     yield v_list
 
 def batchify(dataset, batch_size, config):
