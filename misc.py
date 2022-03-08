@@ -7,17 +7,19 @@ def printModelParam(model):
   for name, param in model.named_parameters():
     print(name, param.data)
 
-def itr_merge(itrs):
+def itr_merge(itrs, config):
   num_itrs = len(itrs)
   for i in range(num_itrs): 
     v_list = []
     for v in itrs[i]:
-      v_list.append(v.to(config.device))
+      for elem in v:
+        elem.to(config.device)
+      v_list.append(v)
     yield v_list
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
-    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)])
+    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)], config)
   else:
     x, y = dataset
     total_length = len(x)
@@ -39,7 +41,7 @@ def env_batchify(dataset, batch_size, config):
     dataloaders = []
     for i in range(n_envs):
       dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers))
-    return itr_merge(dataloaders)
+    return itr_merge(dataloaders, config)
     # return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
 
   else:
