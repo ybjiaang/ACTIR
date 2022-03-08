@@ -7,45 +7,62 @@ def printModelParam(model):
   for name, param in model.named_parameters():
     print(name, param.data)
 
+def itr_merge(*itrs):
+  for itr in itrs: 
+    v_list = []
+    for v in itr:
+      v_list.append(v)
+      yield v_list
+
 def batchify(dataset, batch_size, config):
-  x, y = dataset
-  total_length = len(x)
-  nloops = np.ceil(total_length/batch_size).astype(int)
+  if config.torch_loader:
+    return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+  else:
+    x, y = dataset
+    total_length = len(x)
+    nloops = np.ceil(total_length/batch_size).astype(int)
 
-  def creatDataSet():
-    for i in range(nloops):
-      start = i*batch_size
-      if (start + batch_size) >= total_length:
-        yield x[start:].to(config.device), y[start:].to(config.device)
-      else:
-        yield x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)
+    def creatDataSet():
+      for i in range(nloops):
+        start = i*batch_size
+        if (start + batch_size) >= total_length:
+          yield x[start:].to(config.device), y[start:].to(config.device)
+        else:
+          yield x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)
 
-  return creatDataSet()
+    return creatDataSet()
 
 def env_batchify(dataset, batch_size, config):
   n_envs = len(dataset)
-  all_lens = np.zeros(n_envs)
-  for i, dataset_per_env in enumerate(dataset):
-    all_lens[i] = len(dataset_per_env[0])
+  if config.torch_loader:
+    dataloaders = []
+    for i in range(n_envs):
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=4))
+    return itr_merge(dataloaders)
+    
+  else:
+    all_lens = np.zeros(n_envs)
+    for i, dataset_per_env in enumerate(dataset):
+      all_lens[i] = len(dataset_per_env[0])
 
-  total_length_min = np.min(all_lens)
-  nloops = np.ceil(total_length_min/batch_size).astype(int)
+    total_length_min = np.min(all_lens)
+    nloops = np.ceil(total_length_min/batch_size).astype(int)
 
-  def creatDataSet():
-    for i in range(nloops):
-      start = i*batch_size
-      train_sqt_set = []
+    def creatDataSet():
+      for i in range(nloops):
+        start = i*batch_size
+        train_sqt_set = []
 
-      for env_ind in range(n_envs):
-        x, y = dataset[env_ind]
-        if (start + batch_size) >= all_lens[env_ind]:
-          train_sqt_set.append((x[start:].to(config.device), y[start:].to(config.device)))
-        else:
-          train_sqt_set.append((x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)))
+        for env_ind in range(n_envs):
+          x, y = dataset[env_ind]
+          if (start + batch_size) >= all_lens[env_ind]:
+            train_sqt_set.append((x[start:].to(config.device), y[start:].to(config.device)))
+          else:
+            train_sqt_set.append((x[start : start + batch_size].to(config.device), y[start : start + batch_size].to(config.device)))
 
-      yield train_sqt_set
-      
-  return creatDataSet()
+        yield train_sqt_set
+        
+    return creatDataSet()
 
 def maml_batchify(dataset, batch_size, config):
   n_envs = len(dataset)

@@ -25,6 +25,7 @@ from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, Anti
 from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
 from dataset.camelyon17 import Camelyon17
+from dataset.vlcs import VLCS
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -70,7 +71,7 @@ if __name__ == '__main__':
   parser.add_argument('--n_fine_tune_points', nargs='+', type=int, help='how many points for finetuning')
 
   # dataset
-  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, camelyon17')
+  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, vlcs, camelyon17')
   
   # synthetic dataset specifics
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi')
@@ -94,6 +95,9 @@ if __name__ == '__main__':
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {args.device} device")
   print(args.reg_lambda, args.reg_lambda_2, args.n_outer_loop)
+
+  # dataset related flags
+  args.torch_loader = False
 
   # create datasets
   if args.dataset == "syn":
@@ -131,6 +135,13 @@ if __name__ == '__main__':
 
     x, y = env.sample_envs(env.num_train_evns + 1, n = args.syn_dataset_train_size)
     test_dataset = (x, y)
+  
+  elif args.dataset == "vlcs":
+    args.torch_loader = True
+    env = VLCS(args)
+    train_dataset = env.train_data_list
+    val_dataset = env.val_data_list
+    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
   else:
     if args.dataset == "bike":
@@ -207,6 +218,17 @@ if __name__ == '__main__':
         nn.init.zeros_(lin.bias)
     Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
 
+  if args.dataset == "vlcs":
+    """use resnet18"""
+    args.model_kwargs = {
+            'pretrained': True,
+        }
+    Phi = initialize_torchvision_model(
+                name='resnet18',
+                d_out=16,
+                **args.model_kwargs)
+    args.phi_odim = Phi.d_out
+
   if args.dataset == "camelyon17":
     """use resnet18"""
     args.model_kwargs = {
@@ -232,15 +254,15 @@ if __name__ == '__main__':
     # Phi = nn.Sequential(feature, lin)
 
   
-    reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
-    hidden_dims = 256
-    lin1 = nn.Linear(input_dim, hidden_dims)
-    lin2 = nn.Linear(hidden_dims, hidden_dims)
-    lin3 = nn.Linear(hidden_dims, phi_odim)
-    for lin in [lin1, lin2, lin3]:
-        nn.init.xavier_uniform_(lin.weight)
-        nn.init.zeros_(lin.bias)
-    Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
+    # hidden_dims = 256
+    # lin1 = nn.Linear(input_dim, hidden_dims)
+    # lin2 = nn.Linear(hidden_dims, hidden_dims)
+    # lin3 = nn.Linear(hidden_dims, phi_odim)
+    # for lin in [lin1, lin2, lin3]:
+    #     nn.init.xavier_uniform_(lin.weight)
+    #     nn.init.zeros_(lin.bias)
+    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
