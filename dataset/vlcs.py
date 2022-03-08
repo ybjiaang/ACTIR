@@ -8,6 +8,8 @@ from torch.utils.data import TensorDataset, Subset
 from torchvision.datasets import MNIST, ImageFolder
 import os
 import argparse
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class MultipleDomainDataset:
 
@@ -52,8 +54,6 @@ class VLCS(MultipleDomainDataset):
             elif i == val_i:
                 self.val_data_list = env_dataset
             else:
-                for i in range(len(env_dataset)):
-                    print(env_dataset[i][0])
                 self.train_data_list.append(env_dataset)
 
         self.input_shape = (3, 224, 224,)

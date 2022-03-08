@@ -7,6 +7,7 @@ import tarfile
 from zipfile import ZipFile
 import argparse
 import shutil
+import uuid
 
 # utils #######################################################################
 
