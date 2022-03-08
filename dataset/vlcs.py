@@ -22,7 +22,7 @@ class VLCS(MultipleDomainDataset):
         super().__init__()
         self.config = config
         self.num_train_evns = 2
-        environments = [f.name for f in os.scandir(root) if f.is_dir()]
+        environments = [f.name for f in os.scandir(config.data_dir) if f.is_dir()]
         environments = sorted(environments)
         test_i = 3
         val_i = 2
@@ -41,7 +41,7 @@ class VLCS(MultipleDomainDataset):
 
             env_transform = transform
 
-            path = os.path.join(root, environment)
+            path = os.path.join(config.data_dir, environment)
             env_dataset = ImageFolder(path,
                 transform=env_transform)
 

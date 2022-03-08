@@ -82,7 +82,7 @@ if __name__ == '__main__':
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
   # camelyon17 specifics
-  parser.add_argument('--data_dir', type=str, default= "data", help='where to put data')
+  parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
 
   # misc
   parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
