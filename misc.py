@@ -12,12 +12,12 @@ def itr_merge(itrs):
   for i in range(num_itrs): 
     v_list = []
     for v in itrs[i]:
-      v_list.append(v)
+      v_list.append(v.to(config.device))
     yield v_list
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
-    return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
+    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)])
   else:
     x, y = dataset
     total_length = len(x)
