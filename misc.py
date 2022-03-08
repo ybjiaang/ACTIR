@@ -7,16 +7,17 @@ def printModelParam(model):
   for name, param in model.named_parameters():
     print(name, param.data)
 
-def itr_merge(*itrs):
-  for itr in itrs: 
+def itr_merge(itrs):
+  num_itrs = len(itrs)
+  for i in range(num_itrs): 
     v_list = []
-    for v in itr:
+    for v in itrs[i]:
       v_list.append(v)
-      yield v_list
+    yield v_list
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
-    return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
   else:
     x, y = dataset
     total_length = len(x)
@@ -37,9 +38,10 @@ def env_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=4))
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers))
     return itr_merge(dataloaders)
-    
+    # return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
+
   else:
     all_lens = np.zeros(n_envs)
     for i, dataset_per_env in enumerate(dataset):
