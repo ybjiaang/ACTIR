@@ -10,7 +10,7 @@ def printModelParam(model):
 def itr_merge(itrs, config):
   num_itrs = len(itrs)
   if num_itrs == 1:
-    for v in itrs:
+    for v in itrs[0]:
       yield (v[0].to(config.device), v[1].to(config.device))
   else:
     for i in range(num_itrs): 

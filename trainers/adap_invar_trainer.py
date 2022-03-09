@@ -75,8 +75,8 @@ class AdaptiveInvariantNNTrainer():
         # for i in range(self.num_class):
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        reg_loss = DiscreteConditionalLinearHSICLoss(f_beta, f_eta, y)
-        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
+        # reg_loss = DiscreteConditionalLinearHSICLoss(f_beta, f_eta, y)
+        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
         # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
         # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean() 
         # print(reg_loss)
