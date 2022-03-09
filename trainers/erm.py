@@ -30,7 +30,6 @@ class ERM():
     for t in tqdm(range(self.config.n_outer_loop)):
       loss_print = 0
       count = 0
-      accuracy_count = 0
       total = 0
       base_accuracy_count = 0
       for train in env_batchify(train_dataset, batch_size, self.config):
@@ -43,8 +42,6 @@ class ERM():
           if self.classification:
             _, base_predicted = torch.max(f_beta.data, 1)
             base_accuracy_count += (base_predicted == y).sum()
-            _, predicted = torch.max((f_beta + f_eta).data, 1)
-            accuracy_count += (predicted == y).sum()
             total += y.size(0)
 
         self.optimizer.zero_grad()
@@ -58,7 +55,6 @@ class ERM():
         print(loss_print.item()/count)
         if self.classification:
           print(f"Bse Test Error {base_accuracy_count.item()/total} ")
-          print(f"Test loss {accuracy_count.item()/total} ")
 
   def test(self, test_dataset, input_model = None, batch_size = 32, print_flag = True):
 
