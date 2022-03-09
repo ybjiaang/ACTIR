@@ -81,7 +81,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
-  parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
+  parser.add_argument('--batch_size', type=int, default= 32, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 280, help='regularization coeff for irm')
   parser.add_argument('--reg_lambda', type=float, default= 1.1288378916846888,help='regularization coeff for adaptive invariant learning')
   parser.add_argument('--reg_lambda_2', type=float, default= 280, help='second regularization coeff for adaptive invariant learning')
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
   # dataset related flags
   args.torch_loader = False
-  args.num_workers = 0
+  args.num_workers = 4
 
   # create datasets
   if args.dataset == "syn":
