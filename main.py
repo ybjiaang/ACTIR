@@ -8,7 +8,7 @@ Original file is located at
 """
 
 # Commented out IPython magic to ensure Python compatibility.
-import torch 
+import torch, torchvision
 from torch import nn
 from torch.autograd import Variable
 import numpy as np
@@ -44,6 +44,36 @@ def set_seed(seed):
   os.environ['PYTHONHASHSEED'] = str(seed)
   torch.backends.cudnn.deterministic = True
   torch.backends.cudnn.benchmark = False
+
+class Identity(nn.Module):
+  """An identity layer"""
+  def __init__(self):
+      super(Identity, self).__init__()
+
+  def forward(self, x):
+      return x
+
+class ResNet(torch.nn.Module):
+   """ResNet with the softmax chopped off and the batchnorm frozen"""
+   def __init__(self, model):
+      super(ResNet, self).__init__()
+      self.network = model
+      
+   def forward(self, x):
+    """Encode x into a feature vector of size n_outputs."""
+    return self.network(x)
+    
+   def train(self, mode=True):
+    """
+    Override the default train() to freeze the BN parameters
+    """
+    super().train(mode)
+    self.freeze_bn()
+  
+   def freeze_bn(self):
+    for m in self.network.modules():
+      if isinstance(m, nn.BatchNorm2d):
+        m.eval()
 
 if __name__ == '__main__':
   set_seed(0)
@@ -98,7 +128,7 @@ if __name__ == '__main__':
 
   # dataset related flags
   args.torch_loader = False
-  args.num_workers = 4
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -229,6 +259,7 @@ if __name__ == '__main__':
                 d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
+    Phi = ResNet(Phi)
 
   if args.dataset == "camelyon17":
     """use resnet18"""
