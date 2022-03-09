@@ -18,7 +18,7 @@ class ERM():
     self.fine_inner_lr = 1e-2
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
+    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
 
   # Define training Loop
@@ -30,12 +30,22 @@ class ERM():
     for t in tqdm(range(self.config.n_outer_loop)):
       loss_print = 0
       count = 0
+      accuracy_count = 0
+      total = 0
+      base_accuracy_count = 0
       for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):
           x, y = train[env_ind]
           f_beta, _ = self.model(x)
           loss += self.criterion(f_beta, y)
+
+          if self.classification:
+            _, base_predicted = torch.max(f_beta.data, 1)
+            base_accuracy_count += (base_predicted == y).sum()
+            _, predicted = torch.max((f_beta + f_eta).data, 1)
+            accuracy_count += (predicted == y).sum()
+            total += y.size(0)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -46,6 +56,9 @@ class ERM():
       if t % 1 == 0 and self.config.verbose:
         print(loss.item()/(n_train_envs*batch_size))
         print(loss_print.item()/count)
+        if self.classification:
+          print(f"Bse Test Error {base_accuracy_count.item()/total} ")
+          print(f"Test loss {accuracy_count.item()/total} ")
 
   def test(self, test_dataset, input_model = None, batch_size = 32, print_flag = True):
 
