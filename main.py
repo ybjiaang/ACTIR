@@ -225,8 +225,8 @@ if __name__ == '__main__':
             'pretrained': True,
         }
     Phi = initialize_torchvision_model(
-                name='resnet18',
-                d_out=16,
+                name='resnet50',
+                d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
 
