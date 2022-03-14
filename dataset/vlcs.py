@@ -53,6 +53,7 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
+                # self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
 

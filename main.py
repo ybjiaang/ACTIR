@@ -58,6 +58,7 @@ class ResNet(torch.nn.Module):
    def __init__(self, model):
       super(ResNet, self).__init__()
       self.network = model
+      self.freeze_bn()
       
    def forward(self, x):
     """Encode x into a feature vector of size n_outputs."""
@@ -81,11 +82,11 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
-  parser.add_argument('--batch_size', type=int, default= 32, help='batch size')
+  parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 280, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 1.1288378916846888,help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 280, help='second regularization coeff for adaptive invariant learning')
-  parser.add_argument('--gamma', type=float, default= 0.0, help='interpolation parmameter')
+  parser.add_argument('--reg_lambda', type=float, default= 1,help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
@@ -255,7 +256,7 @@ if __name__ == '__main__':
             'pretrained': True,
         }
     Phi = initialize_torchvision_model(
-                name='resnet50',
+                name='resnet18',
                 d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out

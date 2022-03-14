@@ -18,7 +18,7 @@ class ERM():
     self.fine_inner_lr = 1e-2
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
 
 
   # Define training Loop

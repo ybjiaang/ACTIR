@@ -25,7 +25,7 @@ class AdaptiveInvariantNNTrainer():
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #, weight_decay=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-4) #, weight_decay=1e-2)
     # self.outer_optimizer = torch.optim.SGD(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
