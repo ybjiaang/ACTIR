@@ -331,23 +331,6 @@ if __name__ == '__main__':
   if args.model_name == "erm" or args.compare_all_invariant_models:
     model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
     trainer = ERM(model, criterion, args)
-    
-    if args.print_base_graph:
-      # check if the base classifer match before training
-      sampe_n = 100
-      x_base_test,y_base_test = env.sample_envs(env.num_train_evns + 1, n = sampe_n)
-      ind = np.argsort(x_base_test[:,0], axis=0)
-      y_base_test = y_base_test[ind]
-      x_base_test_sorted = np.sort(x_base_test, axis=0)
-      y_base = env.sample_base_classifer(x_base_test_sorted)
-      with torch.no_grad(): 
-        y_base_predicted = trainer.model.sample_base_classifer(x_base_test_sorted)
-      plt.figure()
-      plt.plot(x_base_test_sorted[:,0], y_base, label="true base classifer")
-      plt.plot(x_base_test_sorted[:,0], y_base_test, label="true y")
-      plt.plot(x_base_test_sorted[:,0], y_base_predicted.numpy(), label="estimated base classifer")
-      plt.legend()
-      plt.savefig("png_folder/erm_comparision_before.png")
 
     print("erm training...")
     trainer.train(train_dataset, args.batch_size)
