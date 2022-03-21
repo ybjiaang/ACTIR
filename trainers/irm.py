@@ -17,7 +17,7 @@ class IRM():
     self.criterion = loss_fn
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-2)
+    self.optimizer = torch.optim.Adam(self.model.Phi.parameters(), lr=1e-4)
 
     self.reg_lambda = self.config.irm_reg_lambda #0.1 # reg_lambda
 
