@@ -2,6 +2,18 @@ from matplotlib.pyplot import axes, axis
 import numpy as np
 import torch 
 import torch.nn as nn
+import os
+from torch.utils.data import Dataset, DataLoader
+
+class FolderDataset(Dataset):
+  def __init__(self, folder):
+    self.files = os.listdir(folder)
+    self.folder = folder
+  def __len__(self):
+    return len(self.files)
+  def __getitem__(self, idx):
+    tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
+    return tensor_dict['phi'], tensor_dict['y']
 
 def printModelParam(model):
   for name, param in model.named_parameters():
@@ -301,7 +313,20 @@ def BaseLoss(test_dataset, env, criterion, batch_size):
 
     print(f"Bse Test loss {loss.item()/batch_num} ")
     return loss.item()/batch_num
-  
+
+
+def standalone_tunning_test(trainer, config, test_dataset, n_fine_tune_points = 1):
+  finetuned_losses = [ ]
+
+  for i in range(config.n_fine_tune_tests):
+    finetune_dataset = torch.utils.data.Subset(test_dataset, np.random.choice(len(test_dataset), n_fine_tune_points, replace=False))
+    model = trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
+    finetuned_loss = trainer.test(test_dataset, input_model = model, rep_learning_flag = True, print_flag=False)
+    finetuned_losses.append(finetuned_loss)
+
+  print(sum(finetuned_losses) / len(finetuned_losses))
+  return finetuned_losses
+
 def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fine_tune_points = 1, test_unlabelled_dataset = None, run_proj_gd = False):
   # Finetuning tests
   finetuned_loss = 0.0

@@ -18,6 +18,8 @@ import argparse
 # %matplotlib inline
 import csv
 import os
+import seaborn as sns
+import pandas as pd
 
 import matplotlib.pyplot as plt
 
@@ -34,7 +36,10 @@ from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
-from misc import fine_tunning_test, BaseLoss, initialize_torchvision_model
+from misc import standalone_tunning_test, fine_tunning_test, BaseLoss, initialize_torchvision_model, FolderDataset
+
+# seaborn stuff
+err_sty = 'band'
 
 def set_seed(seed):
   random.seed(seed)
@@ -115,11 +120,18 @@ if __name__ == '__main__':
   # camelyon17 specifics
   parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
 
+
+  # standalone finetune test
+  parser.add_argument('--run_fine_tune_test_standalone', action='store_true', help='run standalone finetunning tests')
+
   # misc
   parser.add_argument('--print_base_graph', action='store_true', help='whether to print base classifer comparision graph, can only be used in 1 dimension')
   parser.add_argument('--verbose', action='store_true', help='verbose or not')
   parser.add_argument('--cvs_dir', type=str, default= "./test.cvs", help='path to the cvs file')
+  parser.add_argument('--model_save_dir', type=str, default= "./saved_model", help='where to save model')
   parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
+  parser.add_argument('--save_test_phi', action='store_true', help='whether to save phi for finetune test')
+
   args = parser.parse_args()
 
   # Get cpu or gpu device for training.
@@ -127,9 +139,15 @@ if __name__ == '__main__':
   print(f"Using {args.device} device")
   print(args.reg_lambda, args.reg_lambda_2, args.n_outer_loop)
 
+  # create dictionary if not exist
+  if not os.path.exists(args.model_save_dir):
+    os.makedirs(args.model_save_dir)
+
   # dataset related flags
   args.torch_loader = False
-  args.num_workers = 4
+  if args.run_fine_tune_test_standalone:
+    args.torch_loader = True
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -329,30 +347,70 @@ if __name__ == '__main__':
 
   """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
+    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim)
     trainer = ERM(model, criterion, args)
 
-    print("erm training...")
-    trainer.train(train_dataset, args.batch_size)
+    if not args.run_fine_tune_test_standalone:
+      model.to(args.device)
+      trainer = ERM(model, criterion, args)
+      print("erm training...")
+      trainer.train(train_dataset, args.batch_size)
+      trainer.save_model()
 
-    print("erm test...")
-    erm_loss = trainer.test(test_dataset)
+      print("erm test...")
+      erm_loss = trainer.test(test_dataset)
 
-    # print("erm val...")
-    # erm_loss_val = trainer.test(val_dataset)
+      # print("erm val...")
+      # erm_loss_val = trainer.test(val_dataset)
 
-    if args.run_fine_tune_test:
-        for n_finetune_loop in [20]:
-            print(n_finetune_loop)
-            trainer.config.n_finetune_loop = n_finetune_loop
-            for learning_rate in [1e-2]:
-                print("learning rate:" + str(learning_rate))
-                trainer.fine_inner_lr = learning_rate
-                # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
-            # anti_causal_finetune_loss = []
-                erm_finetune_loss = []
-                for n_tune_points in  args.n_fine_tune_points:
-                    erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+      if args.run_fine_tune_test:
+          for n_finetune_loop in [20]:
+              print(n_finetune_loop)
+              trainer.config.n_finetune_loop = n_finetune_loop
+              for learning_rate in [1e-2]:
+                  print("learning rate:" + str(learning_rate))
+                  trainer.fine_inner_lr = learning_rate
+                  # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+              # anti_causal_finetune_loss = []
+                  erm_finetune_loss = []
+                  for n_tune_points in  args.n_fine_tune_points:
+                      erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+    else:
+      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      model.to(args.device)
+      trainer = ERM(model, criterion, args)
+      embedding_dataset = FolderDataset(trainer.emb_path)
+      # erm_loss = trainer.test(embedding_dataset, rep_learning_flag=True)
+      def create_DF(inp, x_values):
+        df = pd.DataFrame(inp).melt()
+        df.columns = ['num of finetuning points', 'finetuned accuary']
+
+        df.loc[:, 'num of finetuning points'].replace(np.arange(len(x_values)), x_values, inplace=True)
+
+        return df
+
+      fig = plt.figure()
+      plt.clf()
+      acc_lists = []
+      for n_tune_points in  args.n_fine_tune_points:
+        acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+      
+      df = create_DF(np.array(acc_lists).T, np.array(args.n_fine_tune_points))
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'erm')
+    
+      # other plot stuff
+      ax = plt.gca()
+      plt.xlabel('# Finetunning Points', fontsize=20)
+      plt.ylabel('Finetuned Accuary', fontsize=20)
+      plt.setp(ax.get_xticklabels(), fontsize=10)
+      plt.setp(ax.get_yticklabels(), fontsize=10)
+      plt.tight_layout()
+      plt.xticks(np.array(args.n_fine_tune_points))
+      plt.legend(loc=3, fontsize=15, title='Algo')
+      plt.ylim([0, 1])
+
+      plt.savefig("erm_fine_tune.png")
+
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:

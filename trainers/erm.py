@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import copy
 from tqdm import tqdm
+import os
 
 from misc import batchify, env_batchify
 
@@ -18,8 +19,15 @@ class ERM():
     self.fine_inner_lr = 1e-2
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
+    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
 
+    # model save and load path
+    self.model_path = config.model_save_dir + "/erm.tar"
+    self.emb_path = config.model_save_dir + "/erm_emb"
+
+    if self.config.save_test_phi:
+      if not os.path.exists(self.emb_path):
+        os.makedirs(self.emb_path)
 
   # Define training Loop
   def train(self, train_dataset, batch_size, n_outer_loop = 30):
@@ -47,16 +55,16 @@ class ERM():
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
         loss_print += loss
         count += 1
     
       if t % 1 == 0 and self.config.verbose:
-        print(loss.item()/(n_train_envs*batch_size))
         print(loss_print.item()/count)
         if self.classification:
           print(f"Bse Test Error {base_accuracy_count.item()/total} ")
 
-  def test(self, test_dataset, input_model = None, batch_size = 32, print_flag = True):
+  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 32, print_flag = True):
 
     test_model = self.model
     if input_model is not None:
@@ -66,8 +74,16 @@ class ERM():
     loss = 0
     total = 0
 
+    save_tensor_idx = 0
     for x, y in batchify(test_dataset, batch_size, self.config):
-      f_beta, _ = test_model(x)
+      f_beta, phi = test_model(x, rep_learning = rep_learning_flag)
+
+      if self.config.save_test_phi:
+        nb_tensors = len(phi)
+        for i in range(nb_tensors):
+          torch.save({'phi':phi[i], 'y': y[i]}, f"{self.emb_path}/tensor{save_tensor_idx}.pt")
+          save_tensor_idx += 1
+
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
         loss += (predicted == y).sum()
@@ -75,14 +91,19 @@ class ERM():
         loss += self.criterion(f_beta, y) * y.size(0) 
 
       total += y.size(0)
+
     if print_flag:
       print(f"Bse Test Error {loss.item()/total} ")
-    if input_model is None:
-        torch.save(self.model, "./erm.model") 
     return loss.item()/total
 
+  def save_model(self):
+    torch.save({
+            'epoch': self.config.n_outer_loop,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            }, self.model_path)
 
-  def finetune_test(self, test_finetune_dataset, batch_size = 32):
+  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 32):
     model = copy.deepcopy(self.model)
     param_to_update_inner_loop  = model.beta
 
@@ -95,7 +116,7 @@ class ERM():
         loss = 0
         batch_num += 1
 
-        f_beta, _ = model(x)
+        f_beta, _ = model(x, rep_learning = rep_learning_flag)
         loss += self.criterion(f_beta, y) 
 
         self.test_inner_optimizer.zero_grad()

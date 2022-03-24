@@ -24,8 +24,11 @@ class BaseClass(nn.Module):
     init_beta = torch.Tensor(init_beta_numpy)
     self.beta = torch.nn.Parameter(init_beta)
 
-  def forward(self, x, fast_beta = None):
-    rep = self.Phi(x)
+  def forward(self, x, rep_learning = False, fast_beta = None):
+    if rep_learning:
+      rep = x
+    else:
+      rep = self.Phi(x)
 
     if fast_beta is None:
       f_beta = rep @ self.beta
