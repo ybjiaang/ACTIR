@@ -192,11 +192,14 @@ class AdaptiveInvariantNNTrainer():
 
       if self.classification:
         _, base_predicted = torch.max(f_beta.data, 1)
-        base_loss += (base_predicted == y).sum()
-        base_all_prediction.append(((base_predicted == y).cpu().numpy()))
+        base_correct_or_not = base_predicted == y
+        base_loss += (base_correct_or_not).sum()
+        base_all_prediction += (base_correct_or_not).cpu().numpy().tolist()
+
         _, predicted = torch.max((f_beta + f_eta).data, 1)
-        loss += (predicted == y).sum()
-        all_predicition.append(((predicted == y).cpu().numpy()))
+        correct_or_not = predicted == y
+        loss += (correct_or_not).sum()
+        all_predicition += (correct_or_not).cpu().numpy().tolist()
       else:
         loss += self.criterion(f_beta + f_eta, y) * y.size(0)
         base_loss += self.criterion(f_beta, y) * y.size(0)

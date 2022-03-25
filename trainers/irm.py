@@ -57,8 +57,9 @@ class IRM():
       f_beta, _ = self.model(x)
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
-        loss += (predicted == y).sum()
-        all_prediction.append(((predicted == y).cpu().numpy()))
+        correct_or_not = predicted == y
+        loss += (correct_or_not).sum()
+        all_prediction += (correct_or_not).cpu().numpy().tolist()
       else:
         loss += self.criterion(f_beta, y) * y.size(0) 
 

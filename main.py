@@ -111,7 +111,7 @@ if __name__ == '__main__':
   
   # synthetic dataset specifics
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi')
-  parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
+  parser.add_argument('--syn_dataset_train_size', type=int, default= 1050, help='size of synthetic dataset per env')
 
   # bike sharing specifics
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
