@@ -5,7 +5,7 @@ import copy
 from tqdm import tqdm
 import os
 
-from misc import batchify, env_batchify
+from misc import batchify, env_batchify, mean_confidence_interval
 
 class ERM():
   def __init__(self, model, loss_fn, config):
@@ -75,6 +75,7 @@ class ERM():
     total = 0
 
     save_tensor_idx = 0
+    all_prediction = []
     for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, phi = test_model(x, rep_learning = rep_learning_flag)
 
@@ -87,6 +88,7 @@ class ERM():
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
         loss += (predicted == y).sum()
+        all_prediction.append(((predicted == y).cpu().numpy()))
       else:
         loss += self.criterion(f_beta, y) * y.size(0) 
 
@@ -94,6 +96,8 @@ class ERM():
 
     if print_flag:
       print(f"Bse Test Error {loss.item()/total} ")
+      print(f"Bse Test Std {np.std(np.array(all_prediction).astype(int))} ")
+      print(mean_confidence_interval(np.array(all_prediction).astype(int)))
     return loss.item()/total
 
   def save_model(self):

@@ -6,7 +6,7 @@ from tqdm import tqdm
 from torch.autograd import grad
 import os
 
-from misc import batchify, HSICLoss, DiscreteConditionalLinearHSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
+from misc import mean_confidence_interval, batchify, HSICLoss, DiscreteConditionalLinearHSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
 class AdaptiveInvariantNNTrainer():
   def __init__(self, model, loss_fn, reg_lambda, config, causal_dir = True):
@@ -179,6 +179,8 @@ class AdaptiveInvariantNNTrainer():
     base_loss = 0
 
     save_tensor_idx = 0
+    base_all_prediction = []
+    all_predicition = []
     for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, f_eta, phi = self.model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
 
@@ -191,8 +193,10 @@ class AdaptiveInvariantNNTrainer():
       if self.classification:
         _, base_predicted = torch.max(f_beta.data, 1)
         base_loss += (base_predicted == y).sum()
+        base_all_prediction.append(((base_predicted == y).cpu().numpy()))
         _, predicted = torch.max((f_beta + f_eta).data, 1)
         loss += (predicted == y).sum()
+        all_predicition.append(((predicted == y).cpu().numpy()))
       else:
         loss += self.criterion(f_beta + f_eta, y) * y.size(0)
         base_loss += self.criterion(f_beta, y) * y.size(0)
@@ -201,8 +205,14 @@ class AdaptiveInvariantNNTrainer():
 
     if print_flag: 
         print(f"Bse Test Error {base_loss.item()/total} ")
+        print(f"Bse Test Std {np.std(np.array(base_all_prediction).astype(int))} ")
+        print(mean_confidence_interval(np.array(base_all_prediction).astype(int)))
+
         print(f"Test loss {loss.item()/total} ")
+        print(f"Test Std {np.std(np.array(all_predicition).astype(int))} ")
+        print(mean_confidence_interval(np.array(all_predicition).astype(int)))
     
+
     return base_loss.item()/total, loss.item()/total
 
   def save_model(self):

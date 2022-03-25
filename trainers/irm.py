@@ -5,7 +5,7 @@ import copy
 from tqdm import tqdm
 from torch.autograd import grad
 
-from misc import batchify, env_batchify
+from misc import batchify, env_batchify, mean_confidence_interval
 
 class IRM():
   def __init__(self, model, loss_fn, config, reg_lambda=0.1):
@@ -52,14 +52,18 @@ class IRM():
     loss = 0
     total = 0
     
+    all_prediction = []
     for x, y in batchify(test_dataset, batch_size, self.config):
       f_beta, _ = self.model(x)
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
         loss += (predicted == y).sum()
+        all_prediction.append(((predicted == y).cpu().numpy()))
       else:
         loss += self.criterion(f_beta, y) * y.size(0) 
 
       total += y.size(0)
     print(f"Bse Test Error {loss.item()/total} ")
+    print(f"Bse Test Std {np.std(np.array(all_prediction).astype(int))} ")
+    print(mean_confidence_interval(np.array(all_prediction).astype(int)))
     return loss.item()/total

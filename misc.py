@@ -6,6 +6,16 @@ import os
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
+import scipy.stats
+
+def mean_confidence_interval(data, confidence=0.95):
+  a = data.ravel()
+  a = 1.0 * a
+  n = len(a)
+  m, se = np.mean(a), scipy.stats.sem(a)
+  h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+  return m, h, se
+
 def create_DF(inp, x_values):
   df = pd.DataFrame(inp).melt()
   df.columns = ['num of finetuning points', 'finetuned accuary']
