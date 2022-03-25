@@ -40,6 +40,18 @@ def itr_merge(itrs, config):
         v_list.append((v[0].to(config.device), v[1].to(config.device)))
       yield v_list
 
+def maml_iter_merge(itrs, config):
+  num_itrs = len(itrs)
+  for i in range(num_itrs): 
+    v_sqt_list = []
+    v_qrt_set = []
+    for v in itrs[i]:
+      # print(len(v))
+      # v_sqt_list.append((v[0].to(config.device), v[1].to(config.device)))
+      v_sqt_list.append((v[0][0::2].to(config.device), v[1][0::2].to(config.device)))
+      v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
+    yield v_sqt_list, v_qrt_set
+
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
     return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)], config)
@@ -93,33 +105,40 @@ def env_batchify(dataset, batch_size, config):
 
 def maml_batchify(dataset, batch_size, config):
   n_envs = len(dataset)
-  all_lens = np.zeros(n_envs)
-  for i, dataset_per_env in enumerate(dataset):
-    all_lens[i] = len(dataset_per_env[0])
+  if config.torch_loader:
+    dataloaders = []
+    for i in range(n_envs):
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers))
+    return maml_iter_merge(dataloaders, config)
 
-  total_length_min = np.min(all_lens)
-  nloops = np.ceil(total_length_min/batch_size).astype(int)
+  else:
+    all_lens = np.zeros(n_envs)
+    for i, dataset_per_env in enumerate(dataset):
+      all_lens[i] = len(dataset_per_env[0])
 
-  def creatDataSet():
-    for i in range(nloops):
-      start = i*batch_size
-      train_sqt_set = []
-      train_qrt_set = []
+    total_length_min = np.min(all_lens)
+    nloops = np.ceil(total_length_min/batch_size).astype(int)
 
-      for env_ind in range(n_envs):
-        x, y = dataset[env_ind]
-        if (start + batch_size) >= all_lens[env_ind]:
-          # assume we have at least two elements, otherwise, python would throw the index error
-          train_sqt_set.append((x[start::2].to(config.device), y[start::2].to(config.device)))
-          train_qrt_set.append((x[start+1::2].to(config.device), y[start+1::2].to(config.device)))
+    def creatDataSet():
+      for i in range(nloops):
+        start = i*batch_size
+        train_sqt_set = []
+        train_qrt_set = []
 
-        else:
-          train_sqt_set.append((x[start : start + batch_size//2].to(config.device), y[start : start + batch_size//2].to(config.device)))
-          train_qrt_set.append((x[start + batch_size//2 : start + batch_size].to(config.device), y[start + batch_size//2 : start + batch_size].to(config.device)))
+        for env_ind in range(n_envs):
+          x, y = dataset[env_ind]
+          if (start + batch_size) >= all_lens[env_ind]:
+            # assume we have at least two elements, otherwise, python would throw the index error
+            train_sqt_set.append((x[start::2].to(config.device), y[start::2].to(config.device)))
+            train_qrt_set.append((x[start+1::2].to(config.device), y[start+1::2].to(config.device)))
 
-      yield train_sqt_set, train_qrt_set
+          else:
+            train_sqt_set.append((x[start : start + batch_size//2].to(config.device), y[start : start + batch_size//2].to(config.device)))
+            train_qrt_set.append((x[start + batch_size//2 : start + batch_size].to(config.device), y[start + batch_size//2 : start + batch_size].to(config.device)))
+
+        yield train_sqt_set, train_qrt_set
       
-  return creatDataSet()
+    return creatDataSet()
 
 def pairwise_distances(x):
     #x should be two dimensional

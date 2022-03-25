@@ -147,7 +147,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 0
+  args.num_workers = 4
 
   # create datasets
   if args.dataset == "syn":
