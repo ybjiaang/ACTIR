@@ -149,7 +149,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 0
+  args.num_workers = 4
 
   # create datasets
   if args.dataset == "syn":
@@ -303,26 +303,26 @@ if __name__ == '__main__':
 #     # print(feature.d_out)
 #     # args.phi_odim = 16
 # =======
-    # Phi = initialize_torchvision_model(
-    #             name='resnet18',
-    #             d_out=128,
-    #             **args.model_kwargs)
-    # args.phi_odim = Phi.d_out
+    Phi = initialize_torchvision_model(
+                name='resnet18',
+                d_out=128,
+                **args.model_kwargs)
+    args.phi_odim = Phi.d_out
 
     # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)
     # Phi = nn.Sequential(feature, lin)
 
   
-    reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
-    hidden_dims = 256
-    lin1 = nn.Linear(input_dim, hidden_dims)
-    lin2 = nn.Linear(hidden_dims, hidden_dims)
-    lin3 = nn.Linear(hidden_dims, phi_odim)
-    for lin in [lin1, lin2, lin3]:
-        nn.init.xavier_uniform_(lin.weight)
-        nn.init.zeros_(lin.bias)
-    Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
+    # hidden_dims = 256
+    # lin1 = nn.Linear(input_dim, hidden_dims)
+    # lin2 = nn.Linear(hidden_dims, hidden_dims)
+    # lin3 = nn.Linear(hidden_dims, phi_odim)
+    # for lin in [lin1, lin2, lin3]:
+    #     nn.init.xavier_uniform_(lin.weight)
+    #     nn.init.zeros_(lin.bias)
+    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
