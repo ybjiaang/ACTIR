@@ -113,14 +113,14 @@ if __name__ == '__main__':
   
   # synthetic dataset specifics
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi')
-  parser.add_argument('--syn_dataset_train_size', type=int, default= 1050, help='size of synthetic dataset per env')
+  parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
 
   # bike sharing specifics
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
   # camelyon17 specifics
-  parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
+  parser.add_argument('--data_dir', type=str, default= "data", help='where to put data')
 
 
   # standalone finetune test
@@ -149,7 +149,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 4
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -195,6 +195,14 @@ if __name__ == '__main__':
     val_dataset = env.val_data_list
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
+  elif args.dataset == "camelyon17":
+      args.torch_loader = True
+      print("camelyon17 dataset")
+      env = Camelyon17(args)
+      train_dataset = env.train_data_list
+      val_dataset = env.val_data_list
+      test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+
   else:
     if args.dataset == "bike":
       print("bikesharing dataset")
@@ -202,9 +210,7 @@ if __name__ == '__main__':
     if args.dataset == "color_mnist":
       print("color mnist dataset")
       env = ColorMnist()
-    if args.dataset == "camelyon17":
-      print("camelyon17 dataset")
-      env = Camelyon17(args)
+    
 
     args.n_envs = env.num_train_evns
 
@@ -297,25 +303,26 @@ if __name__ == '__main__':
 #     # print(feature.d_out)
 #     # args.phi_odim = 16
 # =======
-    Phi = initialize_torchvision_model(
-                name='resnet18',
-                d_out=128,
-                **args.model_kwargs)
-    args.phi_odim = Phi.d_out
+    # Phi = initialize_torchvision_model(
+    #             name='resnet18',
+    #             d_out=128,
+    #             **args.model_kwargs)
+    # args.phi_odim = Phi.d_out
+
     # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)
     # Phi = nn.Sequential(feature, lin)
 
   
-    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
-    # hidden_dims = 256
-    # lin1 = nn.Linear(input_dim, hidden_dims)
-    # lin2 = nn.Linear(hidden_dims, hidden_dims)
-    # lin3 = nn.Linear(hidden_dims, phi_odim)
-    # for lin in [lin1, lin2, lin3]:
-    #     nn.init.xavier_uniform_(lin.weight)
-    #     nn.init.zeros_(lin.bias)
-    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
+    hidden_dims = 256
+    lin1 = nn.Linear(input_dim, hidden_dims)
+    lin2 = nn.Linear(hidden_dims, hidden_dims)
+    lin3 = nn.Linear(hidden_dims, phi_odim)
+    for lin in [lin1, lin2, lin3]:
+        nn.init.xavier_uniform_(lin.weight)
+        nn.init.zeros_(lin.bias)
+    Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:

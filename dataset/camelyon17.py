@@ -14,10 +14,10 @@ class CustomInputWILDSSubset(WILDSSubset):
     def __getitem__(self, idx):
         if isinstance(idx, slice) :
             #Get the start, stop, and step from the slice
-            x = torch.stack([self[ii] for ii in range(*idx.indices(len(self)))], dim=0)
+            x, y = torch.stack([self[ii] for ii in range(*idx.indices(len(self)))], dim=0)
         else:
-            x, _, _ = self.dataset[idx]
-        return x
+            x, y, _ = self.dataset[idx]
+        return x, y
 
     def __len__(self):
         return len(self.dataset)
@@ -62,12 +62,12 @@ class Camelyon17(object):
             np.random.shuffle(train_env_idx)
             temp_train_dataset = WILDSSubset(dataset, train_env_idx, torch_transform)
             self.train_data_list.append(
-                (CustomInputWILDSSubset(temp_train_dataset), temp_train_dataset.y_array),
+                CustomInputWILDSSubset(temp_train_dataset),
             )
 
         # val
         self.val_data_list = [
-            (CustomInputWILDSSubset(val_data), val_data.y_array),
+            CustomInputWILDSSubset(val_data),
         ]
 
         # test
@@ -82,7 +82,7 @@ class Camelyon17(object):
         )
         print("actual fine tune size: " + str(len(test_data_finetune)))
 
-        self.test_data_finetune = (CustomInputWILDSSubset(test_data_finetune), test_data_finetune.y_array)
+        self.test_data_finetune = CustomInputWILDSSubset(test_data_finetune)
         
         unlabled_tune_frac = test_unlabled_size / n_tests
 
@@ -95,7 +95,7 @@ class Camelyon17(object):
 
         self.test_data_unlabled = test_data_unlabled
 
-        self.test_data_list = (CustomInputWILDSSubset(test_data), test_data.y_array)
+        self.test_data_list = CustomInputWILDSSubset(test_data)
 
     def sample_envs(self, env_ind=0, train_val_test = 0):
         # train
