@@ -5,8 +5,14 @@ import torch.nn as nn
 import os
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
+import random
 
 import scipy.stats
+
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 def mean_confidence_interval(data, confidence=0.95):
   a = data.ravel()
@@ -64,7 +70,7 @@ def maml_iter_merge(itrs, config):
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
-    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)], config)
+    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker)], config)
   else:
     x, y = dataset
     total_length = len(x)
@@ -85,7 +91,7 @@ def env_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers))
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return itr_merge(dataloaders, config)
     # return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
 
@@ -118,7 +124,7 @@ def maml_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers))
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return maml_iter_merge(dataloaders, config)
 
   else:
