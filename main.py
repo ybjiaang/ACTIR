@@ -89,8 +89,8 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 10, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 8,help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 1.5, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 1,help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
@@ -317,32 +317,34 @@ if __name__ == '__main__':
     
   """ HSIC """
   if args.model_name == "hsic" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, phi_dim = args.phi_odim).to(args.device)
-    trainer = HSIC(model, criterion, args)
+    if not args.run_fine_tune_test_standalone:
+      model = BaseClass(input_dim, Phi, phi_dim = args.phi_odim).to(args.device)
+      trainer = HSIC(model, criterion, args)
 
-    print("hsic training...")
-    trainer.train(train_dataset, args.batch_size)
+      print("hsic training...")
+      trainer.train(train_dataset, args.batch_size)
 
-    print("hsic test...")
-    hsic_loss = trainer.test(test_dataset)
-    # hsic_loss = 0
+      print("hsic test...")
+      hsic_loss = trainer.test(test_dataset)
+      # hsic_loss = 0
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
-    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
-    trainer = IRM(model, criterion, args)
-    
-    print("irm training...")
-    trainer.train(train_dataset, args.batch_size)
+    if not args.run_fine_tune_test_standalone:
+      model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
+      trainer = IRM(model, criterion, args)
+      
+      print("irm training...")
+      trainer.train(train_dataset, args.batch_size)
 
-    print("irm test...")
-    irm_loss = trainer.test(test_dataset)
+      print("irm test...")
+      irm_loss = trainer.test(test_dataset)
 
-    if args.hyper_param_tuning:
-      with open(args.cvs_dir, 'a', newline='') as file: 
-        writer = csv.writer(file)
-        row = [args.irm_reg_lambda, irm_loss]
-        writer.writerow(row)
+      if args.hyper_param_tuning:
+        with open(args.cvs_dir, 'a', newline='') as file: 
+          writer = csv.writer(file)
+          row = [args.irm_reg_lambda, irm_loss]
+          writer.writerow(row)
 
 
   """ ERM """
@@ -381,28 +383,10 @@ if __name__ == '__main__':
       trainer = ERM(model, criterion, args)
       embedding_dataset = FolderDataset(trainer.emb_path)
 
-      fig = plt.figure()
-      plt.clf()
-      acc_lists = []
+      erm_acc_lists = []
       for n_tune_points in  args.n_fine_tune_points:
-        acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+        erm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
       
-      df = create_DF(np.array(acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'erm')
-    
-      # other plot stuff
-      ax = plt.gca()
-      plt.xlabel('# Finetunning Points', fontsize=20)
-      plt.ylabel('Finetuned Accuary', fontsize=20)
-      plt.setp(ax.get_xticklabels(), fontsize=10)
-      plt.setp(ax.get_yticklabels(), fontsize=10)
-      plt.tight_layout()
-      plt.xticks(np.array(args.n_fine_tune_points))
-      plt.legend(loc=3, fontsize=15, title='Algo')
-      plt.ylim([0, 1])
-
-      plt.savefig("erm_fine_tune.png")
-
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
@@ -441,28 +425,10 @@ if __name__ == '__main__':
       trainer = LinearMAML(model, criterion, args)
       embedding_dataset = FolderDataset(trainer.emb_path)
 
-      fig = plt.figure()
-      plt.clf()
-      acc_lists = []
+      maml_acc_lists = []
       for n_tune_points in  args.n_fine_tune_points:
-        acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+        maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
       
-      df = create_DF(np.array(acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'erm')
-    
-      # other plot stuff
-      ax = plt.gca()
-      plt.xlabel('# Finetunning Points', fontsize=20)
-      plt.ylabel('Finetuned Accuary', fontsize=20)
-      plt.setp(ax.get_xticklabels(), fontsize=10)
-      plt.setp(ax.get_yticklabels(), fontsize=10)
-      plt.tight_layout()
-      plt.xticks(np.array(args.n_fine_tune_points))
-      plt.legend(loc=3, fontsize=15, title='Algo')
-      plt.ylim([0, 1])
-
-      plt.savefig("maml_fine_tune.png")
-
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim)
@@ -508,17 +474,68 @@ if __name__ == '__main__':
       model.to(args.device)
       trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
       embedding_dataset = FolderDataset(trainer.emb_path)
-      adapt_loss = trainer.test(embedding_dataset, rep_learning_flag=True)
 
+      adp_invar_anti_acc_lists = []
+      for n_tune_points in  args.n_fine_tune_points:
+        adp_invar_anti_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, adaptive=True, n_fine_tune_points = n_tune_points))
+
+
+  """ Adaptive Invariant Causal """
+  if args.model_name == "adp_invar" or args.compare_all_invariant_models:
+    if not args.run_fine_tune_test_standalone:
+      model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
+      trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
+
+      print("adp_invar training...")
+      trainer.train(train_dataset, args.batch_size)
+      trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
+      torch.save(trainer.model, './anti.pt')
+      print("adp_invar test...")
+      adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
+
+      trainer.config.n_finetune_loop = 2
+      
+      if args.hyper_param_tuning:
+        with open(args.cvs_dir, 'a', newline='') as file: 
+          writer = csv.writer(file)
+          row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_base_loss]
+          writer.writerow(row)
+
+      if args.run_fine_tune_test:
+        causal_proj_gd_losses = []
+        causal_gd_losses = []
+        for n_tune_points in  args.n_fine_tune_points:
+          causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
+          causal_proj_gd_losses.append(causal_proj_gd_loss)
+          causal_gd_losses.append(causal_gd_loss)
+
+  if args.compare_all_invariant_models:
+    if not args.run_fine_tune_test_standalone:
+      with open(args.cvs_dir, 'a', newline='') as file: 
+        writer = csv.writer(file)
+        row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
+        if args.run_fine_tune_test:
+          for i, n_tune_points in enumerate(args.n_fine_tune_points):
+            row.append(erm_finetune_loss[i])
+            row.append(maml_finetune_loss[i])
+            row.append(anti_causal_finetune_loss[i])
+            row.append(causal_proj_gd_losses[i])
+            row.append(causal_gd_losses[i])
+        writer.writerow(row)
+      print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss)
+    else:
       fig = plt.figure()
       plt.clf()
-      acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, adaptive=True, n_fine_tune_points = n_tune_points))
-      
-      df = create_DF(np.array(acc_lists).T, np.array(args.n_fine_tune_points))
+
+      df = create_DF(np.array(erm_acc_lists).T, np.array(args.n_fine_tune_points))
       sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'erm')
+
+      df = create_DF(np.array(adp_invar_anti_acc_lists).T, np.array(args.n_fine_tune_points))
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'adaptive causal')
     
+      df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
+
       # other plot stuff
       ax = plt.gca()
       plt.xlabel('# Finetunning Points', fontsize=20)
@@ -527,49 +544,7 @@ if __name__ == '__main__':
       plt.setp(ax.get_yticklabels(), fontsize=10)
       plt.tight_layout()
       plt.xticks(np.array(args.n_fine_tune_points))
-      plt.legend(loc=3, fontsize=15, title='Algo')
+      plt.legend(loc=1, fontsize=15, title='Algo')
       plt.ylim([0, 1])
 
-      plt.savefig("adapt_fine_tune.png")
-
-  """ Adaptive Invariant Causal """
-  if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-    model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
-    trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
-
-    print("adp_invar training...")
-    trainer.train(train_dataset, args.batch_size)
-    trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
-    torch.save(trainer.model, './anti.pt')
-    print("adp_invar test...")
-    adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
-
-    trainer.config.n_finetune_loop = 2
-    
-    if args.hyper_param_tuning:
-      with open(args.cvs_dir, 'a', newline='') as file: 
-        writer = csv.writer(file)
-        row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_base_loss]
-        writer.writerow(row)
-
-    if args.run_fine_tune_test:
-      causal_proj_gd_losses = []
-      causal_gd_losses = []
-      for n_tune_points in  args.n_fine_tune_points:
-        causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
-        causal_proj_gd_losses.append(causal_proj_gd_loss)
-        causal_gd_losses.append(causal_gd_loss)
-
-  if args.compare_all_invariant_models:
-    with open(args.cvs_dir, 'a', newline='') as file: 
-      writer = csv.writer(file)
-      row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
-      if args.run_fine_tune_test:
-        for i, n_tune_points in enumerate(args.n_fine_tune_points):
-          row.append(erm_finetune_loss[i])
-          row.append(maml_finetune_loss[i])
-          row.append(anti_causal_finetune_loss[i])
-          row.append(causal_proj_gd_losses[i])
-          row.append(causal_gd_losses[i])
-      writer.writerow(row)
-    print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss)
+      plt.savefig("all_fine_tune.png")

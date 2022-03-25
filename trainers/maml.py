@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import copy
 from tqdm import tqdm
+import os
 
 from misc import batchify, maml_batchify
 
@@ -22,6 +23,14 @@ class LinearMAML():
     self.fast_update_lr = 1e-2
     self.n_inner_update = 10
     self.meta_optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
+
+    # model save and load path
+    self.model_path = config.model_save_dir + "/maml.tar"
+    self.emb_path = config.model_save_dir + "/maml_emb"
+
+    if self.config.save_test_phi:
+      if not os.path.exists(self.emb_path):
+        os.makedirs(self.emb_path)
 
   def meta_update(self, train_batch, train_query_batch):
     n_train_envs = len(train_batch)
@@ -69,8 +78,14 @@ class LinearMAML():
     
     return loss.item()
 
+  def save_model(self):
+    torch.save({
+            'epoch': self.config.n_outer_loop,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.meta_optimizer.state_dict(),
+            }, self.model_path)
   
-  def test(self, test_dataset, batch_size = 32, input_model = None, print_flag=True):
+  def test(self, test_dataset, rep_learning_flag = False, batch_size = 32, input_model = None, print_flag=True):
     
     fast_weights = None
     test_model = self.model
@@ -81,9 +96,16 @@ class LinearMAML():
     loss = 0
     total = 0
     
+    save_tensor_idx = 0
     for x, y in batchify(test_dataset, batch_size, self.config):
-      f_beta, _ = test_model(x, fast_beta = fast_weights)
-      
+      f_beta, phi = test_model(x, fast_beta = fast_weights, rep_learning = rep_learning_flag)
+
+      if self.config.save_test_phi:
+        nb_tensors = len(phi)
+        for i in range(nb_tensors):
+          torch.save({'phi':phi[i], 'y': y[i]}, f"{self.emb_path}/tensor{save_tensor_idx}.pt")
+          save_tensor_idx += 1
+
       if self.classification:
         _, predicted = torch.max(f_beta.data, 1)
         loss += (predicted == y).sum()
@@ -96,11 +118,9 @@ class LinearMAML():
     return loss.item()/total
 
 
-  def finetune_test(self, test_finetune_dataset, batch_size = 32):
+  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 32):
     model = copy.deepcopy(self.model)
-# <<<<<<< HEAD
-#     # param_to_update_inner_loop  = model.beta
-# =======
+
     param_to_update_inner_loop  = model.beta
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 
@@ -111,7 +131,7 @@ class LinearMAML():
         loss = 0
         batch_num += 1
 
-        f_beta, _ = model(x)
+        f_beta, _ = model(x, rep_learning = rep_learning_flag)
         loss += self.criterion(f_beta, y)
 
         self.test_inner_optimizer.zero_grad()
