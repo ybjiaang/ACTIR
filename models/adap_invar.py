@@ -32,8 +32,11 @@ class AdaptiveInvariantNN(nn.Module):
 
     self.softmax_layer = nn.Softmax(dim=-1)
 
-  def forward(self, x, env_ind, fast_eta = None):
-    rep = self.Phi(x)
+  def forward(self, x, env_ind, rep_learning = False, fast_eta = None):
+    if rep_learning:
+      rep = x
+    else:
+      rep = self.Phi(x)
 
     f_beta = rep @ self.beta
     if fast_eta is None:

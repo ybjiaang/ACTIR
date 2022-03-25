@@ -4,6 +4,15 @@ import torch
 import torch.nn as nn
 import os
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+
+def create_DF(inp, x_values):
+  df = pd.DataFrame(inp).melt()
+  df.columns = ['num of finetuning points', 'finetuned accuary']
+
+  df.loc[:, 'num of finetuning points'].replace(np.arange(len(x_values)), x_values, inplace=True)
+
+  return df
 
 class FolderDataset(Dataset):
   def __init__(self, folder):
@@ -315,14 +324,19 @@ def BaseLoss(test_dataset, env, criterion, batch_size):
     return loss.item()/batch_num
 
 
-def standalone_tunning_test(trainer, config, test_dataset, n_fine_tune_points = 1):
+def standalone_tunning_test(trainer, config, test_dataset, adaptive = False, n_fine_tune_points = 1):
   finetuned_losses = [ ]
 
   for i in range(config.n_fine_tune_tests):
     finetune_dataset = torch.utils.data.Subset(test_dataset, np.random.choice(len(test_dataset), n_fine_tune_points, replace=False))
-    model = trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
-    finetuned_loss = trainer.test(test_dataset, input_model = model, rep_learning_flag = True, print_flag=False)
-    finetuned_losses.append(finetuned_loss)
+    if not adaptive:
+      model = trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
+      finetuned_loss = trainer.test(test_dataset, input_model = model, rep_learning_flag = True, print_flag=False)
+      finetuned_losses.append(finetuned_loss)
+    else:
+      trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
+      _, finetuned_loss = trainer.test(test_dataset, print_flag=False, rep_learning_flag = True)
+      finetuned_losses.append(finetuned_loss)
 
   print(sum(finetuned_losses) / len(finetuned_losses))
   return finetuned_losses

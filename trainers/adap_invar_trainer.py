@@ -4,6 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 from torch.autograd import grad
+import os
 
 from misc import batchify, HSICLoss, DiscreteConditionalLinearHSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
 
@@ -25,7 +26,7 @@ class AdaptiveInvariantNNTrainer():
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=1e-2)
 
     self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-4) #, weight_decay=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #, weight_decay=1e-2)
     # self.outer_optimizer = torch.optim.SGD(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
@@ -35,6 +36,14 @@ class AdaptiveInvariantNNTrainer():
     self.eta_test_ind = 0
 
     self.softmax_layer = nn.Softmax(dim=-1)
+
+    # model save and load path
+    self.model_path = config.model_save_dir + "/adap_invar.tar"
+    self.emb_path = config.model_save_dir + "/adap_invar_emb"
+
+    if self.config.save_test_phi:
+      if not os.path.exists(self.emb_path):
+        os.makedirs(self.emb_path)
 
   def calculate_eta(self, x, y, b):
     """ 
@@ -162,15 +171,22 @@ class AdaptiveInvariantNNTrainer():
           print(f"Bse Test Error {base_loss.item()/total} ")
           print(f"Test loss {loss.item()/total} ")
 
-  def test(self, test_dataset, batch_size = 32, print_flag = True):
+  def test(self, test_dataset, rep_learning_flag = False, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])
     self.model.eval()
     loss = 0
     total = 0
     base_loss = 0
 
+    save_tensor_idx = 0
     for x, y in batchify(test_dataset, batch_size, self.config):
-      f_beta, f_eta, _ = self.model(x, self.eta_test_ind)
+      f_beta, f_eta, phi = self.model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
+
+      if self.config.save_test_phi:
+        nb_tensors = len(phi)
+        for i in range(nb_tensors):
+          torch.save({'phi':phi[i], 'y': y[i]}, f"{self.emb_path}/tensor{save_tensor_idx}.pt")
+          save_tensor_idx += 1
 
       if self.classification:
         _, base_predicted = torch.max(f_beta.data, 1)
@@ -180,13 +196,6 @@ class AdaptiveInvariantNNTrainer():
       else:
         loss += self.criterion(f_beta + f_eta, y) * y.size(0)
         base_loss += self.criterion(f_beta, y) * y.size(0)
-        # base_predicted = (torch.squeeze(torch.clamp(f_beta.data, min = 0, max=4) + 0.5) ).int().long()
-        # base_loss += (base_predicted == torch.squeeze(y)).sum()
-        # print(f_beta.data)
-        # print(base_predicted)
-        # print(y)
-        # predicted = (torch.squeeze(torch.clamp((f_beta + f_eta).data, min = 0, max=4) + 0.5) ).int().long()
-        # loss += (predicted == torch.squeeze(y)).sum()
 
       total += y.size(0)
 
@@ -196,7 +205,14 @@ class AdaptiveInvariantNNTrainer():
     
     return base_loss.item()/total, loss.item()/total
 
-  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, batch_size = 32,  n_loop = 20, projected_gd = False):
+  def save_model(self):
+    torch.save({
+            'epoch': self.config.n_outer_loop,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.outer_optimizer.state_dict(),
+            }, self.model_path)
+
+  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 32,  n_loop = 20, projected_gd = False):
     self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
     self.model.set_etas_to_zeros()
       
@@ -252,7 +268,7 @@ class AdaptiveInvariantNNTrainer():
         loss = 0
         batch_num += 1
 
-        f_beta, f_eta, _ = self.model(x, self.eta_test_ind)
+        f_beta, f_eta, _ = self.model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
         loss += self.criterion(f_beta + f_eta, y) 
 
         self.test_inner_optimizer.zero_grad()
