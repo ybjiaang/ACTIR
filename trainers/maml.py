@@ -104,7 +104,7 @@ class LinearMAML():
       if self.config.save_test_phi:
         nb_tensors = len(phi)
         for i in range(nb_tensors):
-          torch.save({'phi':phi[i], 'y': y[i]}, f"{self.emb_path}/tensor{save_tensor_idx}.pt")
+          torch.save({'phi':phi[i].detach().cpu(), 'y': y[i].detach().cpu()}, f"{self.emb_path}/tensor{save_tensor_idx}.pt")
           save_tensor_idx += 1
 
       if self.classification:

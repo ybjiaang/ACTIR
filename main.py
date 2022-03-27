@@ -429,6 +429,7 @@ if __name__ == '__main__':
         # for n_tune_points in  args.n_fine_tune_points:
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
+      pass
       model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
       model.to(args.device)
       trainer = LinearMAML(model, criterion, args)
@@ -542,8 +543,8 @@ if __name__ == '__main__':
       df = create_DF(np.array(adp_invar_anti_acc_lists).T, np.array(args.n_fine_tune_points))
       sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'adaptive causal')
     
-      df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
+      # df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
+      # sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
 
       # other plot stuff
       ax = plt.gca()
