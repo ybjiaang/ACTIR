@@ -430,14 +430,14 @@ if __name__ == '__main__':
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
       pass
-      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
-      model.to(args.device)
-      trainer = LinearMAML(model, criterion, args)
-      embedding_dataset = FolderDataset(trainer.emb_path)
+      #model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      #model.to(args.device)
+      #trainer = LinearMAML(model, criterion, args)
+      #embedding_dataset = FolderDataset(trainer.emb_path)
 
-      maml_acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+      #maml_acc_lists = []
+      #for n_tune_points in  args.n_fine_tune_points:
+      #  maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
       
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:

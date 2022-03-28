@@ -23,7 +23,7 @@ class VLCS(MultipleDomainDataset):
     def __init__(self, config, root = 'dataset/VLCS', test_finetune_size = 1000):
         super().__init__()
         self.config = config
-        self.num_train_evns = 2
+        self.num_train_evns = 3
         environments = [f.name for f in os.scandir(config.data_dir) if f.is_dir()]
         environments = sorted(environments)
         test_i = 3
@@ -53,6 +53,7 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
+                self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
 
