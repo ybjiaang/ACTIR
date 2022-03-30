@@ -28,10 +28,10 @@ class VLCS(MultipleDomainDataset):
         environments = sorted(environments)
         test_i = 3
         val_i = 2
-        self.input_dim = 224 * 224 * 3
+        self.input_dim = 112 * 112 * 3
 
         transform = transforms.Compose([
-            transforms.Resize((224,224)),
+            transforms.Resize((112,112)),
             transforms.ToTensor(),
             transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -53,7 +53,7 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
-                self.train_data_list.append(env_dataset)
+                #self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
 
