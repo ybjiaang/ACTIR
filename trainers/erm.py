@@ -16,7 +16,7 @@ class ERM():
     # define loss
     self.criterion = loss_fn
 
-    self.fine_inner_lr = 1e-4
+    self.fine_inner_lr = config.fine_tune_lr
 
     # optimizer
     self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)

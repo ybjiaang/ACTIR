@@ -16,7 +16,7 @@ class LinearMAML():
 
     # define loss
     self.criterion = loss_fn
-    self.fine_inner_lr = 1e-4
+    self.fine_inner_lr = config.fine_tune_lr
 
     # define optimizer
     self.param_to_update_inner_loop = [self.model.beta]

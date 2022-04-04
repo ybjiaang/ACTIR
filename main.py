@@ -95,6 +95,7 @@ if __name__ == '__main__':
   parser.add_argument('--reg_lambda_2', type=float, default= 1, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.1, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
+  parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
 
@@ -143,12 +144,16 @@ if __name__ == '__main__':
   # create dictionary if not exist
   if not os.path.exists(args.model_save_dir):
     os.makedirs(args.model_save_dir)
+  
+  fine_saved_dir = args.model_save_dir + "/saved_npy"
+  if not os.path.exists(fine_saved_dir):
+    os.makedirs(fine_saved_dir)
 
   # dataset related flags
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 4
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -397,6 +402,7 @@ if __name__ == '__main__':
       for n_tune_points in  args.n_fine_tune_points:
         erm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
       
+      np.save(fine_saved_dir + "/erm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(erm_acc_lists))
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
@@ -422,7 +428,6 @@ if __name__ == '__main__':
                   print("learning rate:" + str(learning_rate))
                   # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
                   trainer.fine_inner_lr = learning_rate
-              # anti_causal_finetune_loss = []
                   maml_finetune_loss = []
                   for n_tune_points in  args.n_fine_tune_points:
                       maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
@@ -438,7 +443,8 @@ if __name__ == '__main__':
       maml_acc_lists = []
       for n_tune_points in  args.n_fine_tune_points:
           maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
-      
+      np.save(fine_saved_dir + "/maml_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(maml_acc_lists))
+
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim)
@@ -489,6 +495,8 @@ if __name__ == '__main__':
       for n_tune_points in  args.n_fine_tune_points:
         adp_invar_anti_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, adaptive=True, n_fine_tune_points = n_tune_points))
 
+      np.save(fine_saved_dir + "/anti_causal_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(adp_invar_anti_acc_lists))
+      
 
   """ Adaptive Invariant Causal """
   if args.model_name == "adp_invar" or args.compare_all_invariant_models:
