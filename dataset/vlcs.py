@@ -23,18 +23,19 @@ class VLCS(MultipleDomainDataset):
     def __init__(self, config, root = 'dataset/VLCS', test_finetune_size = 1000):
         super().__init__()
         self.config = config
-        self.num_train_evns = 2
+        self.num_train_evns = 3
         environments = [f.name for f in os.scandir(config.data_dir) if f.is_dir()]
         environments = sorted(environments)
         test_i = 3
         val_i = 2
-        self.input_dim = 224 * 224 * 3
+        self.input_dim = 112 * 112 * 3
 
         transform = transforms.Compose([
             transforms.Resize((224,224)),
             transforms.ToTensor(),
             transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            transforms.Resize((112,112)),
         ])
 
         self.train_data_list = []
@@ -53,10 +54,11 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
+                self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
 
-        self.input_shape = (3, 224, 224,)
+        self.input_shape = (3, 112, 112,)
         self.num_class = len(self.train_data_list[-1].classes)
 
     def sample_envs(self, env_ind=0, train_val_test = 0):

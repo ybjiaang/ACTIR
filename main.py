@@ -8,10 +8,10 @@ Original file is located at
 """
 
 # Commented out IPython magic to ensure Python compatibility.
+import numpy as np
 import torch, torchvision
 from torch import nn
 from torch.autograd import Variable
-import numpy as np
 from tqdm import tqdm
 import random
 import argparse
@@ -89,11 +89,11 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
-  parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 10, help='regularization coeff for irm')
+  parser.add_argument('--batch_size', type=int, default= 64, help='batch size')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 5, help='regularization coeff for irm')
   parser.add_argument('--reg_lambda', type=float, default= 1,help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
-  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
+  parser.add_argument('--reg_lambda_2', type=float, default= 1, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.1, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
@@ -148,7 +148,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 0
+  args.num_workers = 4
 
   # create datasets
   if args.dataset == "syn":
@@ -193,6 +193,7 @@ if __name__ == '__main__':
     train_dataset = env.train_data_list
     val_dataset = env.val_data_list
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+    #val_dataset = test_dataset
 
   elif args.dataset == "camelyon17":
       args.torch_loader = True
@@ -201,6 +202,7 @@ if __name__ == '__main__':
       train_dataset = env.train_data_list
       val_dataset = env.val_data_list
       test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
+      #val_dataset = test_dataset
 
   else:
     if args.dataset == "bike":
@@ -428,6 +430,7 @@ if __name__ == '__main__':
         # for n_tune_points in  args.n_fine_tune_points:
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
+<<<<<<< HEAD
       pass
       # model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
       # model.to(args.device)
@@ -437,6 +440,17 @@ if __name__ == '__main__':
       # maml_acc_lists = []
       # for n_tune_points in  args.n_fine_tune_points:
       #   maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+=======
+      # pass
+      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      model.to(args.device)
+      trainer = LinearMAML(model, criterion, args)
+      embedding_dataset = FolderDataset(trainer.emb_path)
+
+      maml_acc_lists = []
+      for n_tune_points in  args.n_fine_tune_points:
+          maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+>>>>>>> 64229f29401fbf3e33033f94098e6c3d35066290
       
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
@@ -542,8 +556,8 @@ if __name__ == '__main__':
       df = create_DF(np.array(adp_invar_anti_acc_lists).T, np.array(args.n_fine_tune_points))
       sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'adaptive causal')
     
-      # df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
-      # sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
+      df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
 
       # other plot stuff
       ax = plt.gca()
@@ -553,7 +567,7 @@ if __name__ == '__main__':
       plt.setp(ax.get_yticklabels(), fontsize=10)
       plt.tight_layout()
       plt.xticks(np.array(args.n_fine_tune_points))
-      plt.legend(loc=1, fontsize=15, title='Algo')
+      plt.legend(loc=4, fontsize=15, title='Algo')
       # plt.ylim([0, 1])
 
       plt.savefig("all_fine_tune.png")
