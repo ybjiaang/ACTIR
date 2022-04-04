@@ -26,10 +26,10 @@ def run_cmd(cmd):
 gamma = 0.9
 #for reg_lambda in np.logspace(-1, 4, num=10):
 #    for reg_lambda_2 in np.logspace(-1, 4, num=10):
-for reg_lambda in [10]:
-    for reg_lambda_2 in [5, 10, 20, 0.1, 1, 100, 30, 40, 50]:
+for reg_lambda in [1]:
+    for reg_lambda_2 in [0.1, 1]:
         # for gamma in [0.7, 0.9]:
-        for gamma in [0.9]:
+        for gamma in [0.1, 0.2, 0.95]:
             for n_loop in [50]:
                 # synthetical anti-causal
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
@@ -69,8 +69,8 @@ for reg_lambda in [10]:
 
 #for reg_lambda in np.logspace(-1, 5, num=100): 
 #n_loop = 50
-#for reg_lambda in [0.1, 1, 10, 50, 100]:
-#    cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="/scratch/midway2/yiboj/data/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
+#for reg_lambda in [5, 10, 20, 0.1, 1, 100, 30, 40]:
+#    cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
 #    run_cmd(cmd)
         #cmd = 'python main.py --model_name=irm  --dataset=camelyon17 --classification --n_outer_loop 20 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
         # run_cmd(cmd)
