@@ -120,8 +120,7 @@ if __name__ == '__main__':
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
   # camelyon17 specifics
-  parser.add_argument('--data_dir', type=str, default= "data", help='where to put data')
-
+  parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
 
   # standalone finetune test
   parser.add_argument('--run_fine_tune_test_standalone', action='store_true', help='run standalone finetunning tests')
@@ -149,7 +148,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 4
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -387,7 +386,7 @@ if __name__ == '__main__':
                   for n_tune_points in  args.n_fine_tune_points:
                       erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
-      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
       model.to(args.device)
       trainer = ERM(model, criterion, args)
       embedding_dataset = FolderDataset(trainer.emb_path)
@@ -430,14 +429,14 @@ if __name__ == '__main__':
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
       pass
-      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
-      model.to(args.device)
-      trainer = LinearMAML(model, criterion, args)
-      embedding_dataset = FolderDataset(trainer.emb_path)
+      # model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      # model.to(args.device)
+      # trainer = LinearMAML(model, criterion, args)
+      # embedding_dataset = FolderDataset(trainer.emb_path)
 
-      maml_acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+      # maml_acc_lists = []
+      # for n_tune_points in  args.n_fine_tune_points:
+      #   maml_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
       
   """ Adaptive Invariant Anti Causal """
   if args.model_name == "adp_invar_anti_causal" or args.compare_all_invariant_models:
@@ -480,7 +479,7 @@ if __name__ == '__main__':
           for n_tune_points in  args.n_fine_tune_points:
             anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
     else:
-      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
       model.to(args.device)
       trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
       embedding_dataset = FolderDataset(trainer.emb_path)
@@ -555,6 +554,6 @@ if __name__ == '__main__':
       plt.tight_layout()
       plt.xticks(np.array(args.n_fine_tune_points))
       plt.legend(loc=1, fontsize=15, title='Algo')
-      plt.ylim([0, 1])
+      # plt.ylim([0, 1])
 
       plt.savefig("all_fine_tune.png")
