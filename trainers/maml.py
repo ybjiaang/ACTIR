@@ -20,9 +20,9 @@ class LinearMAML():
 
     # define optimizer
     self.param_to_update_inner_loop = [self.model.beta]
-    self.fast_update_lr = 1e-4
+    self.fast_update_lr = 1e-2
     self.n_inner_update = 10
-    self.meta_optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
+    self.meta_optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
 
     # model save and load path
     self.model_path = config.model_save_dir + "/maml.tar"

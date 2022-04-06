@@ -19,7 +19,7 @@ class ERM():
     self.fine_inner_lr = config.fine_tune_lr
 
     # optimizer
-    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
+    self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
 
     # model save and load path
     self.model_path = config.model_save_dir + "/erm.tar"

@@ -153,7 +153,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 0
+  args.num_workers = 4
 
   # create datasets
   if args.dataset == "syn":
@@ -311,7 +311,7 @@ if __name__ == '__main__':
 # =======
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=128,
+                d_out=16,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
 
