@@ -26,17 +26,31 @@ class VLCS(MultipleDomainDataset):
         self.num_train_evns = 3
         environments = [f.name for f in os.scandir(config.data_dir) if f.is_dir()]
         environments = sorted(environments)
-        test_i = 3
-        val_i = 2
-        self.input_dim = 112 * 112 * 3
+        test_i = config.test_index
+        val_i = (test_i - 1) % 4
+        if config.vlcs_downsample:
+            self.input_dim = 112 * 112 * 3
+        else:
+            self.input_dim = 224 * 224 * 3
+        print("test id:" + str(test_i))
+        print("val id:" + str(val_i))
+        print(self.input_dim)
 
-        transform = transforms.Compose([
-            transforms.Resize((224,224)),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            transforms.Resize((112,112)),
-        ])
+        if config.vlcs_downsample:
+            transform = transforms.Compose([
+                transforms.Resize((224,224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                transforms.Resize((112,112)),
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.Resize((224,224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]) 
 
         self.train_data_list = []
         self.val_data_list = []
@@ -54,7 +68,8 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
-                self.train_data_list.append(env_dataset)
+                if not args.hyper_param_tuning:
+                    self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
 

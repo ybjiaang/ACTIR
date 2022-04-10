@@ -89,11 +89,11 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
-  parser.add_argument('--batch_size', type=int, default= 64, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 5, help='regularization coeff for irm')
+  parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 10, help='regularization coeff for irm')
   parser.add_argument('--reg_lambda', type=float, default= 1,help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 1, help='second regularization coeff for adaptive invariant learning')
-  parser.add_argument('--gamma', type=float, default= 0.1, help='interpolation parmameter')
+  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
@@ -120,6 +120,10 @@ if __name__ == '__main__':
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
+  # vlcs specifics ()
+  parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
+  parser.add_argument('--vlcs_downsample', action='store_true', help='whether to downsample vlcs')
+
   # camelyon17 specifics
   parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
 
@@ -144,6 +148,13 @@ if __name__ == '__main__':
   # create dictionary if not exist
   if not os.path.exists(args.model_save_dir):
     os.makedirs(args.model_save_dir)
+
+  args.model_save_dir += "/" + str(args.dataset)
+  if args.dataset == "vlcs": 
+    args.model_save_dir += "_" + str(args.test_index)
+    print(args.model_save_dir)
+    if not os.path.exists(args.model_save_dir):
+      os.makedirs(args.model_save_dir)
   
   fine_saved_dir = args.model_save_dir + "/saved_npy"
   if not os.path.exists(fine_saved_dir):
