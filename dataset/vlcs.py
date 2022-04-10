@@ -72,8 +72,10 @@ class VLCS(MultipleDomainDataset):
                     self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)
-
-        self.input_shape = (3, 112, 112,)
+        if config.downsample:
+            self.input_shape = (3, 112, 112,)
+        else:
+            self.input_shape = (3, 224, 224,)
         self.num_class = len(self.train_data_list[-1].classes)
 
     def sample_envs(self, env_ind=0, train_val_test = 0):

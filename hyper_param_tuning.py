@@ -29,8 +29,8 @@ gamma = 0.9
 for reg_lambda in [1, 0.1, 10]:
     for reg_lambda_2 in [1, 0.1, 10]:
         # for gamma in [0.7, 0.9]:
-        for gamma in [0.95]:
-            for n_loop in [50]:
+        for gamma in [0.5]:
+            for n_loop in [25]:
                 # synthetical anti-causal
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
                 # run_cmd(cmd)
