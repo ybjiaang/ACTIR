@@ -26,10 +26,10 @@ def run_cmd(cmd):
 gamma = 0.9
 #for reg_lambda in np.logspace(-1, 4, num=10):
 #    for reg_lambda_2 in np.logspace(-1, 4, num=10):
-for reg_lambda in [1]:
-    for reg_lambda_2 in [0.1, 1]:
+for reg_lambda in [1, 0.1, 10]:
+    for reg_lambda_2 in [1, 0.1, 10]:
         # for gamma in [0.7, 0.9]:
-        for gamma in [0.1, 0.2, 0.95]:
+        for gamma in [0.95]:
             for n_loop in [50]:
                 # synthetical anti-causal
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
@@ -42,7 +42,10 @@ for reg_lambda in [1]:
                 # synthetical anti-causal multi-class classification
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
                 # run_cmd(cmd)
-                cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
+                # cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
+                # run_cmd(cmd)
+
+                cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./pacs/PACS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
                 run_cmd(cmd)
 
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)

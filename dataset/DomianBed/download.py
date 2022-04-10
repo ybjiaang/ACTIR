@@ -89,9 +89,22 @@ def download_vlcs(data_dir):
 
     shutil.rmtree(tmp_path)
 
+def download_pacs(data_dir):    
+    # Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017
+    full_path = stage_path(data_dir, "PACS")
+
+    download_and_extract("https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd",
+                        os.path.join(data_dir, "PACS.zip"))
+
+    os.rename(os.path.join(data_dir, "kfold"),
+            full_path)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download datasets')
     parser.add_argument('--data_dir', type=str, required=False, default= "./dataset")
+    parser.add_argument('--dataset', type=str, default= "vlcs", help='type of experiment: vlcs, pacs')
     args = parser.parse_args()
 
-    download_vlcs(args.data_dir)
+    if args.dataset == 'vlcs':
+        download_vlcs(args.data_dir)
+    if args.dataset == 'pacs':
+        download_pacs(args.data_dir)

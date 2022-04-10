@@ -28,7 +28,7 @@ class VLCS(MultipleDomainDataset):
         environments = sorted(environments)
         test_i = config.test_index
         val_i = (test_i - 1) % 4
-        if config.vlcs_downsample:
+        if config.downsample:
             self.input_dim = 112 * 112 * 3
         else:
             self.input_dim = 224 * 224 * 3
@@ -36,7 +36,7 @@ class VLCS(MultipleDomainDataset):
         print("val id:" + str(val_i))
         print(self.input_dim)
 
-        if config.vlcs_downsample:
+        if config.downsample:
             transform = transforms.Compose([
                 transforms.Resize((224,224)),
                 transforms.ToTensor(),
@@ -68,7 +68,7 @@ class VLCS(MultipleDomainDataset):
                 self.test_data_list = env_dataset
             elif i == val_i:
                 self.val_data_list = env_dataset
-                if not args.hyper_param_tuning:
+                if not config.hyper_param_tuning:
                     self.train_data_list.append(env_dataset)
             else:
                 self.train_data_list.append(env_dataset)

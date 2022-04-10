@@ -28,6 +28,7 @@ from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
 from dataset.camelyon17 import Camelyon17
 from dataset.vlcs import VLCS
+from dataset.pacs import PACS
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
@@ -120,12 +121,12 @@ if __name__ == '__main__':
   parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
   parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
-  # vlcs specifics ()
+  # domainbed specifics 
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
-  parser.add_argument('--vlcs_downsample', action='store_true', help='whether to downsample vlcs')
+  parser.add_argument('--downsample', action='store_true', help='whether to downsample')
 
   # camelyon17 specifics
-  parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
+  parser.add_argument('--data_dir', type=str, default= "dataset/PACS", help='where to put data')
 
   # standalone finetune test
   parser.add_argument('--run_fine_tune_test_standalone', action='store_true', help='run standalone finetunning tests')
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     os.makedirs(args.model_save_dir)
 
   args.model_save_dir += "/" + str(args.dataset)
-  if args.dataset == "vlcs": 
+  if args.dataset == "vlcs" or args.dataset == "pacs":
     args.model_save_dir += "_" + str(args.test_index)
     print(args.model_save_dir)
     if not os.path.exists(args.model_save_dir):
@@ -164,7 +165,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 16
+  args.num_workers = 0
 
   # create datasets
   if args.dataset == "syn":
@@ -209,7 +210,13 @@ if __name__ == '__main__':
     train_dataset = env.train_data_list
     val_dataset = env.val_data_list
     test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
-    #val_dataset = test_dataset
+
+  elif args.dataset == "pacs":
+    args.torch_loader = True
+    env = PACS(args)
+    train_dataset = env.train_data_list
+    val_dataset = env.val_data_list
+    test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
   elif args.dataset == "camelyon17":
       args.torch_loader = True
@@ -306,21 +313,24 @@ if __name__ == '__main__':
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
 
+  if args.dataset == "pacs":
+    """use resnet18"""
+    args.model_kwargs = {
+            'pretrained': True,
+        }
+    Phi = initialize_torchvision_model(
+                name='resnet18',
+                d_out=None,
+                **args.model_kwargs)
+    args.phi_odim = Phi.d_out
+    Phi = ResNet(Phi)
+
   if args.dataset == "camelyon17":
     """use resnet18"""
     args.model_kwargs = {
             'pretrained': True,
         }
 
-# <<<<<<< HEAD
-#     # feature = initialize_torchvision_model(
-#     #             name='resnet18',
-#     #             d_out=None,
-#     #             **args.model_kwargs)
-#     # # args.phi_odim = Phi.d_out
-#     # print(feature.d_out)
-#     # args.phi_odim = 16
-# =======
     Phi = initialize_torchvision_model(
                 name='resnet18',
                 d_out=8,
