@@ -153,7 +153,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 4
+  args.num_workers = 16
 
   # create datasets
   if args.dataset == "syn":
@@ -235,6 +235,7 @@ if __name__ == '__main__':
 
   if args.hyper_param_tuning:
     test_dataset = val_dataset
+  print(args.hyper_param_tuning)
 
   # loss fn
   if args.classification:
@@ -311,9 +312,10 @@ if __name__ == '__main__':
 # =======
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=16,
+                d_out=8,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
+    #Phi = ResNet(Phi)
 
     # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)

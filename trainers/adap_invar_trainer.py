@@ -26,7 +26,7 @@ class AdaptiveInvariantNNTrainer():
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=config.fine_tune_lr)
 
     self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-2) #, weight_decay=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=1e-4) #, weight_decay=1e-2)
     # self.outer_optimizer = torch.optim.SGD(self.model.parameters(),lr=1e-2)
 
     self.reg_lambda = reg_lambda
@@ -165,7 +165,7 @@ class AdaptiveInvariantNNTrainer():
         phi_loss.backward()
         self.outer_optimizer.step()
       
-      if t % 10 == 0 and self.config.verbose:
+      if self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
         if self.classification:
           print(f"Bse Test Error {base_loss.item()/total} ")
