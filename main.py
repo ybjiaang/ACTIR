@@ -97,6 +97,7 @@ if __name__ == '__main__':
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
+  parser.add_argument('--lr',  type=float, default= 1e-4, help='learning rate')
   parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
 
@@ -144,7 +145,7 @@ if __name__ == '__main__':
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {args.device} device")
-  print(args.reg_lambda, args.reg_lambda_2, args.n_outer_loop)
+  print(args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, args.lr)
 
   # create dictionary if not exist
   if not os.path.exists(args.model_save_dir):
