@@ -7,13 +7,14 @@ from tqdm import tqdm
 import csv
 import os
 
-log_directory = "./log_hyper_parameter"
+log_directory = "./log_hyper_parameter_vlcs"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
 
-filename = log_directory + "/" + "test"+ ".csv"
+filename = log_directory + "/" + "test_2"+ ".csv"
 if os.path.exists(filename):
+    pass
     os.remove(filename)
 
 def run_cmd(cmd):
@@ -26,11 +27,11 @@ def run_cmd(cmd):
 gamma = 0.9
 #for reg_lambda in np.logspace(-1, 4, num=10):
 #    for reg_lambda_2 in np.logspace(-1, 4, num=10):
-for reg_lambda in [1, 0.1, 10]:
-    for reg_lambda_2 in [1, 0.1, 10]:
+for reg_lambda in [10, 0.1, 1]:
+    for reg_lambda_2 in [0.1, 1, 5, 10, 0.01]:
         # for gamma in [0.7, 0.9]:
-        for gamma in [0.5]:
-            for n_loop in [25]:
+        for gamma in [0.9]:
+            for n_loop in [50]:
                 # synthetical anti-causal
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
                 # run_cmd(cmd)
@@ -42,11 +43,14 @@ for reg_lambda in [1, 0.1, 10]:
                 # synthetical anti-causal multi-class classification
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
                 # run_cmd(cmd)
-                # cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
-                # run_cmd(cmd)
-
-                cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./pacs/PACS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
+                
+                cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index 1'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
                 run_cmd(cmd)
+                #cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=pacs --data_dir="./pacs/PACS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index 1'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
+                #run_cmd(cmd)
+
+                #cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./pacs/PACS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop)
+                #run_cmd(cmd)
 
                 # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti-multi --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
                 # run_cmd(cmd)

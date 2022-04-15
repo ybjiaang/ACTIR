@@ -14,7 +14,7 @@ def seed_worker(worker_id):
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
-def mean_confidence_interval(data, confidence=0.95):
+def mean_confidence_interval(data, confidence=0.90):
   a = data.ravel()
   a = 1.0 * a
   n = len(a)
