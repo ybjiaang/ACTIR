@@ -27,7 +27,8 @@ class VLCS(MultipleDomainDataset):
         environments = [f.name for f in os.scandir(config.data_dir) if f.is_dir()]
         environments = sorted(environments)
         test_i = config.test_index
-        val_i = (test_i + 1) % 4
+        assert config.val_index > 0
+        val_i = (test_i + config.val_index) % 4
         if config.downsample:
             self.input_dim = 112 * 112 * 3
         else:

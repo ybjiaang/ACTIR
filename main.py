@@ -124,6 +124,7 @@ if __name__ == '__main__':
 
   # domainbed specifics 
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
+  parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
   parser.add_argument('--downsample', action='store_true', help='whether to downsample')
 
   # camelyon17 specifics
