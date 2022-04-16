@@ -31,11 +31,11 @@ if __name__ == '__main__':
   if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
-  log_directory += "/log_hyper_parameter_" + str(args.dataset) + "_" + str(args.test_index)
+  log_directory += "/log_hyper_parameter_" + str(args.dataset) + "_" + args.model_name + '_' +str(args.test_index)
   if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
-  filename = log_directory + "/" + "test_"+ str(args.test_index)  +".csv"
+  filename = log_directory + "/" + "test_"+ str(args.val_index)  +".csv"
   if os.path.exists(filename):
       os.remove(filename)
   
