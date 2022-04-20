@@ -37,10 +37,11 @@ if __name__ == '__main__':
 
   filename = log_directory + "/" + "test_"+ str(args.val_index)  +".csv"
   if os.path.exists(filename):
-      os.remove(filename)
+      pass
+      #os.remove(filename)
   
   if args.model_name == "adp_invar_anti_causal":
-    for reg_lambda in [10, 0.1, 1]:
+    for reg_lambda in [10, 1, 0.1]:
         for reg_lambda_2 in [0.1, 1, 5, 10, 0.01]:
             for gamma in [0.9]:
                 for n_loop in [50]:
@@ -61,6 +62,7 @@ if __name__ == '__main__':
                         run_cmd(cmd)
 
                     if args.dataset == "pacs":
+                        n_loop = 25
                         cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=pacs --data_dir="./pacs/PACS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index {:} --val_index {:}'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop, args.test_index, args.val_index)
                         run_cmd(cmd)
                     

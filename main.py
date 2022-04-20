@@ -225,9 +225,8 @@ if __name__ == '__main__':
       print("camelyon17 dataset")
       env = Camelyon17(args)
       train_dataset = env.train_data_list
-      val_dataset = env.val_data_list
+      #val_dataset = env.val_data_list
       test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
-      #val_dataset = test_dataset
 
   else:
     if args.dataset == "bike":
@@ -338,7 +337,7 @@ if __name__ == '__main__':
                 d_out=8,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
-    #Phi = ResNet(Phi)
+    Phi = ResNet(Phi)
 
     # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)

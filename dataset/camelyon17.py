@@ -27,12 +27,12 @@ class Camelyon17(object):
         super(Camelyon17, self).__init__()
         self.config = config
         self.num_train_evns = 3
-        self.input_dim = 48 * 48 * 3
+        self.input_dim = 96 * 96 * 3
         self.num_class = 2
         dataset = get_dataset(dataset="camelyon17", root_dir = config.data_dir, download=True)
 
         torch_transform = transforms.Compose(
-                [transforms.Resize((48, 48)), transforms.ToTensor()]
+                [transforms.Resize((96, 96)), transforms.ToTensor()]
             )
         
         train_data = dataset.get_subset(
