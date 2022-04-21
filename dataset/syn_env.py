@@ -61,6 +61,16 @@ class AntiCausalControlDataset(Envs):
     self.input_dim = self.d_x_z_perp + self.d_x_y_perp
     self.num_class = 2
 
+  def sample_envs_z(self, env_ind = 2, n = 100):
+    y = np.random.binomial(1, 0.5, (n,1))
+    factor = np.random.binomial(1, 0.75, (n,1))
+    x_z_perp = (2*y - 1) * (2* factor - 1)
+    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    z = (2*y - 1) * (2* factor - 1)
+    x_y_perp = z
+    
+    return torch.Tensor(np.concatenate([x_z_perp, x_y_perp], axis=1)), torch.Tensor(z) #torch.Tensor(y) 
+
   def sample_envs(self, env_ind, n = 100):
     y = np.random.binomial(1, 0.5, (n,1))
     factor = np.random.binomial(1, 0.75, (n,1))
@@ -79,6 +89,9 @@ class AntiCausalControlDataset(Envs):
   
   def phi_u(self, x):
     return np.cos(np.pi * x) * x
+
+  def z_range(self):
+    return [-1, 1]
 
 class AntiCausalControlDatasetMultiClass(Envs):
   def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1):

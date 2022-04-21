@@ -20,6 +20,8 @@ class ColorMnist(object):
         mnist_train = (mnist.data[:50000], mnist.targets[:50000])
         mnist_val = (mnist.data[50000:55000], mnist.targets[50000:55000])
         mnist_test = (mnist.data[55000:], mnist.targets[55000:])
+
+        self.mnist_val = mnist_val
         
         # train data
         self.train_data_by_season = [
@@ -40,7 +42,7 @@ class ColorMnist(object):
         self.test_data = (test_data_all[0][self.test_finetune_size + self.test_unlabled_size:], test_data_all[1][self.test_finetune_size + self.test_unlabled_size:])
         
 
-    def make_environment(self, images, labels, e):
+    def make_environment(self, images, labels, e, return_color = False):
         def torch_bernoulli(p, size):
             return (torch.rand(size) < p).float()
         def torch_xor(a, b):
@@ -55,9 +57,17 @@ class ColorMnist(object):
         # Apply the color to the image by zeroing out the other color channel
         images = torch.stack([images, images], dim=1)
         images[torch.tensor(range(len(images))), (1-colors).long(), :, :] *= 0    
+        
+        if return_color:
+            return (images.reshape((-1, 2*14*14)).float() / 255., colors[:, None])
 
         return (images.reshape((-1, 2*14*14)).float() / 255., labels.long())
-        # return (images.reshape((-1, 2*14*14)).float() / 255., labels[:, None])
+
+    def sample_envs_z(self, env_ind = 2, n = 100):
+        return self.make_environment(self.mnist_val[0], self.mnist_val[1], 0.5, return_color=True)
+
+    def z_range(self):
+        return [0, 1]
 
     def sample_envs(self, env_ind=0, train_val_test = 0):
         # train

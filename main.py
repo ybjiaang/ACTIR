@@ -92,13 +92,13 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 10, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 1,help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 10, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 8,help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 1.5, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
   parser.add_argument('--lr',  type=float, default= 1e-4, help='learning rate')
-  parser.add_argument('--n_outer_loop',  type=int, default= 100, help='outer loop size')
+  parser.add_argument('--n_outer_loop',  type=int, default= 50, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
 
   # different models
@@ -254,6 +254,7 @@ if __name__ == '__main__':
 
   if args.hyper_param_tuning:
     test_dataset = val_dataset
+
   print(args.hyper_param_tuning)
 
   # loss fn
@@ -293,7 +294,7 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    hidden_dims = 512
+    hidden_dims = 64
     lin1 = nn.Linear(input_dim, hidden_dims)
     lin2 = nn.Linear(hidden_dims, hidden_dims)
     lin3 = nn.Linear(hidden_dims, phi_odim)
@@ -491,8 +492,36 @@ if __name__ == '__main__':
       if args.hyper_param_tuning:
         with open(args.cvs_dir, 'a', newline='') as file: 
           writer = csv.writer(file)
-          row = [args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, adp_invar_anti_causal_base_loss, adp_invar_anti_causal_base_loss_val]
+          row = [args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, args.lr, adp_invar_anti_causal_base_loss, adp_invar_anti_causal_base_loss_val]
           writer.writerow(row)
+      
+      def disentanglment_experiment(dataset, model, config, plot_z = False):
+        disentanglment_dataset = dataset.sample_envs_z()
+        ret_val = model.get_activation(disentanglment_dataset)
+
+        
+
+        # for node in range(8):
+        #   fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
+        colors = ['r', 'b', 'g']
+        fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
+        for z_ind, z in enumerate(env.z_range()):
+          for i_index, i in enumerate([0, 1, config.phi_odim - 1]):
+            sns.kdeplot(ret_val[ret_val[:,-1]==z, i], ax=axs[z_ind], label = str(i))
+            # sns.histplot(ret_val[ret_val[:,-1]==z, i], ax=axs[z_ind], label = str(i), stat='probability', color = colors[i_index])
+
+          axs[z_ind].set_xlabel('Activation Value', fontsize=20)
+          axs[z_ind].set_ylabel('Density', fontsize=20)
+          axs[z_ind].legend(loc=2, fontsize=15, title='Unit #')
+          axs[z_ind].set_ylim([0, 15])
+          axs[z_ind].set_title("Z = {:}".format(z), fontsize=20)
+
+          fig.tight_layout()
+          fig.savefig("disentangle_" + config.dataset + ".png")
+
+
+      disentanglment_experiment(env, trainer, args)
+
 
       if args.run_fine_tune_test:
         if True:

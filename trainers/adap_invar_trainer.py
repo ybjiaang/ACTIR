@@ -171,6 +171,20 @@ class AdaptiveInvariantNNTrainer():
           print(f"Bse Test Error {base_loss.item()/total} ")
           print(f"Test loss {loss.item()/total} ")
 
+  def get_activation(self, test_dataset):
+    self.model.eval()
+    ret_list = []
+    with torch.no_grad():
+      for x, z in batchify(test_dataset, self.config.batch_size, self.config):
+        f_beta, f_eta, phi = self.model(x, self.eta_test_ind)
+        phi_cpu = phi.detach().cpu().numpy()
+        x_cpu = x.detach().cpu().numpy()
+        z_cpu = z.detach().cpu().numpy()
+        combined = np.concatenate((phi_cpu, x_cpu, z_cpu), axis=1)
+        ret_list.append(combined)
+      return np.concatenate(ret_list, axis=0)
+
+
   def test(self, test_dataset, rep_learning_flag = False, batch_size = 32, print_flag = True):
     # print(self.model.etas[0])
     self.model.eval()
