@@ -225,7 +225,7 @@ if __name__ == '__main__':
       print("camelyon17 dataset")
       env = Camelyon17(args)
       train_dataset = env.train_data_list
-      #val_dataset = env.val_data_list
+      val_dataset = env.val_data_list
       test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
   else:
@@ -335,10 +335,10 @@ if __name__ == '__main__':
 
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=8,
+                d_out=128,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
-    Phi = ResNet(Phi)
+    # Phi = ResNet(Phi)
 
     # args.phi_odim = 32
     # lin = nn.Linear(feature.d_out, args.phi_odim)
@@ -402,8 +402,8 @@ if __name__ == '__main__':
       print("erm test...")
       erm_loss = trainer.test(test_dataset)
 
-      # print("erm val...")
-      # erm_loss_val = trainer.test(val_dataset)
+      print("erm val...")
+      erm_loss_val = trainer.test(val_dataset)
 
       if args.run_fine_tune_test:
           for n_finetune_loop in [20]:
