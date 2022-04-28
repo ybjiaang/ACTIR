@@ -154,10 +154,12 @@ if __name__ == '__main__':
 
   args.model_save_dir += "/" + str(args.dataset)
   if args.dataset == "vlcs" or args.dataset == "pacs":
-    args.model_save_dir += "_" + str(args.test_index)
+    args.model_save_dir += "_" + str(args.test_index)# + "_" + str(args.n_outer_loop)
+    #if args.dataset == "pacs":
+    #    args.model_save_dir += "_" + str(args.n_outer_loop)
     print(args.model_save_dir)
-    if not os.path.exists(args.model_save_dir):
-      os.makedirs(args.model_save_dir)
+  if not os.path.exists(args.model_save_dir):
+    os.makedirs(args.model_save_dir)
   
   fine_saved_dir = args.model_save_dir + "/saved_npy"
   if not os.path.exists(fine_saved_dir):
@@ -225,7 +227,7 @@ if __name__ == '__main__':
       print("camelyon17 dataset")
       env = Camelyon17(args)
       train_dataset = env.train_data_list
-      val_dataset = env.val_data_list
+      val_dataset = env.val_data_list[0]
       test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
   else:
@@ -485,9 +487,9 @@ if __name__ == '__main__':
       print("adp_invar anti-causal test...")
       adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-      # print("adp_invar anti-causal test val ...")
-      # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
-      adp_invar_anti_causal_base_loss_val = 0
+      print("adp_invar anti-causal test val ...")
+      adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+      #adp_invar_anti_causal_base_loss_val = 0
 
       if args.hyper_param_tuning:
         with open(args.cvs_dir, 'a', newline='') as file: 
@@ -520,7 +522,7 @@ if __name__ == '__main__':
           fig.savefig("disentangle_" + config.dataset + ".png")
 
 
-      disentanglment_experiment(env, trainer, args)
+      # disentanglment_experiment(env, trainer, args)
 
 
       if args.run_fine_tune_test:

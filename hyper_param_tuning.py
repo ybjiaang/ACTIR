@@ -26,8 +26,8 @@ if __name__ == '__main__':
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
   parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
   parser.add_argument('--reg_lambda_list', nargs='+', type=float, help='reg_lambda to test')
-  parser.add_argument('--reg_lambda_2_list', nargs='+', type=int, help='reg_lambda_2 to tests')
-  parser.add_argument('--irm_reg_lambda_list', nargs='+', type=int, help='irm_reg_lambda to tests')
+  parser.add_argument('--reg_lambda_2_list', nargs='+', type=float, help='reg_lambda_2 to tests')
+  parser.add_argument('--irm_reg_lambda_list', nargs='+', type=float, help='irm_reg_lambda to tests')
 
   args = parser.parse_args()
   log_directory = "./log_hyper_parameter"
@@ -100,6 +100,7 @@ if __name__ == '__main__':
             cmd = 'python main.py --classification --lr 1e-2 --n_outer_loop={:} --model_name=irm --dataset=color_mnist --phi_odim=8 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(n_loop, reg_lambda, filename)
             run_cmd(cmd)
         if args.dataset == "camelyon17":
-            cmd = 'python -u main.py --data_dir="./Camelyon17" --model_name=irm  --dataset=camelyon17 --classification --n_outer_loop 25 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --lr={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, lr, n_loop)
+            n_loop = 20
+            cmd = 'python -u main.py --data_dir="./Camelyon17" --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
             run_cmd(cmd)
                         
