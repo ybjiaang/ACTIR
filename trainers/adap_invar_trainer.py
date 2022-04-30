@@ -23,6 +23,7 @@ class AdaptiveInvariantNNTrainer():
     # optimizer
     self.model.freeze_all_but_etas()
     # self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    self.fine_tune_lr = config.fine_tune_lr
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=config.fine_tune_lr)
 
     self.model.freeze_all_but_beta()
@@ -185,9 +186,14 @@ class AdaptiveInvariantNNTrainer():
       return np.concatenate(ret_list, axis=0)
 
 
-  def test(self, test_dataset, rep_learning_flag = False, batch_size = 32, print_flag = True):
+  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 32, print_flag = True):
+
+    test_model = self.model
+    if input_model is not None:
+      test_model = input_model
+
     # print(self.model.etas[0])
-    self.model.eval()
+    test_model.eval()
     loss = 0
     total = 0
     base_loss = 0
@@ -196,7 +202,7 @@ class AdaptiveInvariantNNTrainer():
     base_all_prediction = []
     all_predicition = []
     for x, y in batchify(test_dataset, batch_size, self.config):
-      f_beta, f_eta, phi = self.model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
+      f_beta, f_eta, phi = test_model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
 
       if self.config.save_test_phi:
         nb_tensors = len(phi)
@@ -239,9 +245,16 @@ class AdaptiveInvariantNNTrainer():
             'optimizer_state_dict': self.outer_optimizer.state_dict(),
             }, self.model_path)
 
-  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 32,  n_loop = 20, projected_gd = False):
-    self.model.freeze_all() # use this so that I can set etas to zeros when I call test again
-    self.model.set_etas_to_zeros()
+  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 128,  n_loop = 20, projected_gd = False):
+    model = copy.deepcopy(self.model)
+
+    param_to_update_inner_loop  = model.beta
+
+    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_tune_lr)
+    # model.freeze_all() # use this so that I can set etas to zeros when I call test again
+    # model.set_etas_to_zeros()
+    # model.beta.zero_()
+    model.beta.requires_grad=True
       
     if self.causal_dir:
       M = torch.zeros((self.model.phi_odim, self.model.phi_odim), requires_grad=False)
@@ -282,8 +295,8 @@ class AdaptiveInvariantNNTrainer():
 
         M = (M - torch.outer(mean_phi, mean_phi)) * total_num_entries / (total_num_entries - 1)
 
-    self.model.train()
-    self.model.freeze_all_but_etas()
+    model.train()
+    # model.freeze_all_but_etas()
 
     # test set is ususally small
     # for param in self.model.Phi.parameters():
@@ -295,8 +308,8 @@ class AdaptiveInvariantNNTrainer():
         loss = 0
         batch_num += 1
 
-        f_beta, f_eta, _ = self.model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
-        loss += self.criterion(f_beta + f_eta, y) 
+        f_beta, f_eta, _ = model(x, self.eta_test_ind, rep_learning = rep_learning_flag)
+        loss += self.criterion(f_beta, y) 
 
         self.test_inner_optimizer.zero_grad()
         loss.backward()
@@ -323,3 +336,4 @@ class AdaptiveInvariantNNTrainer():
       # print(y)
       if i % 10 == 0 and self.config.verbose:
           print(loss.item()/batch_num) 
+    return model

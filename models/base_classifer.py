@@ -40,3 +40,7 @@ class BaseClass(nn.Module):
   def sample_base_classifer(self, x):
     x_tensor = torch.Tensor(x)
     return self.Phi(x_tensor) @ self.beta
+    
+  def freeze_all(self):
+    for para in self.parameters():
+      para.requires_grad = False

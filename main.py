@@ -140,6 +140,7 @@ if __name__ == '__main__':
   parser.add_argument('--model_save_dir', type=str, default= "./saved_model", help='where to save model')
   parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
   parser.add_argument('--save_test_phi', action='store_true', help='whether to save phi for finetune test')
+  parser.add_argument('--nb_workers', type=int, default= 4, help='number of workers for dataLoaders')
 
   args = parser.parse_args()
 
@@ -169,7 +170,7 @@ if __name__ == '__main__':
   args.torch_loader = False
   if args.run_fine_tune_test_standalone:
     args.torch_loader = True
-  args.num_workers = 4
+  args.num_workers = args.nb_workers
 
   # create datasets
   if args.dataset == "syn":
@@ -312,7 +313,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=8,
+                d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -324,7 +325,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=8,
+                d_out=None,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -462,7 +463,7 @@ if __name__ == '__main__':
         # for n_tune_points in  args.n_fine_tune_points:
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
-      model.load_state_dict(torch.load(trainer.model_path)['model_state_dict'])
+      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
       model.to(args.device)
       trainer = LinearMAML(model, criterion, args)
       embedding_dataset = FolderDataset(trainer.emb_path)
@@ -620,4 +621,4 @@ if __name__ == '__main__':
       plt.legend(loc=4, fontsize=15, title='Algo')
       # plt.ylim([0, 1])
 
-      plt.savefig("all_fine_tune.png")
+      plt.savefig(str(args.test_index) + "_all_fine_tune_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+ ".png")

@@ -369,8 +369,8 @@ def standalone_tunning_test(trainer, config, test_dataset, adaptive = False, n_f
       finetuned_loss = trainer.test(test_dataset, input_model = model, rep_learning_flag = True, print_flag=False)
       finetuned_losses.append(finetuned_loss)
     else:
-      trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
-      _, finetuned_loss = trainer.test(test_dataset, print_flag=False, rep_learning_flag = True)
+      model = trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
+      finetuned_loss, _ = trainer.test(test_dataset, input_model = model, print_flag=False, rep_learning_flag = True)
       finetuned_losses.append(finetuned_loss)
 
   print(sum(finetuned_losses) / len(finetuned_losses))

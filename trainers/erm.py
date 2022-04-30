@@ -108,9 +108,12 @@ class ERM():
             'optimizer_state_dict': self.optimizer.state_dict(),
             }, self.model_path)
 
-  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 32):
+  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
     model = copy.deepcopy(self.model)
     param_to_update_inner_loop  = model.beta
+    # model.freeze_all()
+    # model.beta.zero_()
+    # model.beta.requires_grad=True
 
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 

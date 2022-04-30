@@ -128,7 +128,12 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true', help='verbose or not')
     parser.add_argument('--cvs_dir', type=str, default= "./test.cvs", help='path to the cvs file')
     parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
+    parser.add_argument('--test_index', type=int, default= 0, help='which dataset to test')
+
+    parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
+    parser.add_argument('--downsample', action='store_true', help='whether to downsample')
 
     parser.add_argument('--data_dir', type=str, default= "dataset/VLCS", help='where to put data')
     args = parser.parse_args()
     env = VLCS(args)
+    print(len(env.test_data_list))
