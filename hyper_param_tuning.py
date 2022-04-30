@@ -44,10 +44,12 @@ if __name__ == '__main__':
       #os.remove(filename)
 
   if not args.reg_lambda_list:
-      args.reg_lambda_list = [10, 1, 0.1, 5, 100, 20]
+    #   args.reg_lambda_list = [10, 1, 0.1, 5, 100, 20]
+    args.reg_lambda_list = [10, 1, 0.1]
 
   if not args.reg_lambda_2_list:
-      args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01, 20, 100]
+    #   args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01, 20, 100]
+    args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01]
 
   if args.model_name == "adp_invar_anti_causal":
     for reg_lambda in args.reg_lambda_list:
@@ -68,6 +70,7 @@ if __name__ == '__main__':
                         # run_cmd(cmd)
                         
                         if args.dataset == "vlcs":
+                            n_loop = 50
                             cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index {:} --val_index {:}'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop, args.test_index, args.val_index)
                             run_cmd(cmd)
 
