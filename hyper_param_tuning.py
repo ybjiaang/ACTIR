@@ -53,7 +53,9 @@ if __name__ == '__main__':
 
   if args.model_name == "adp_invar_anti_causal":
     for reg_lambda in args.reg_lambda_list:
+    # for reg_lambda in np.logspace(-1, 4, num=10):
         for reg_lambda_2 in args.reg_lambda_2_list:
+        # for reg_lambda_2 in np.logspace(-1, 4, num=10):
             for gamma in [0.9]:
                 for n_loop in [20]:
                     for lr in [1e-4]:

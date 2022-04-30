@@ -313,7 +313,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=None,
+                d_out=128,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -325,7 +325,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=None,
+                d_out=128,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -412,7 +412,7 @@ if __name__ == '__main__':
           for n_finetune_loop in [20]:
               print(n_finetune_loop)
               trainer.config.n_finetune_loop = n_finetune_loop
-              for learning_rate in [1e-2]:
+              for learning_rate in [args.fine_tune_lr]:
                   print("learning rate:" + str(learning_rate))
                   trainer.fine_inner_lr = learning_rate
                   # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
@@ -452,7 +452,7 @@ if __name__ == '__main__':
           for n_finetune_loop in [20]:
               print(n_finetune_loop)
               trainer.config.n_finetune_loop = n_finetune_loop
-              for learning_rate in [1e-2]:
+              for learning_rate in [args.fine_tune_lr]:
                   print("learning rate:" + str(learning_rate))
                   # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
                   trainer.fine_inner_lr = learning_rate
@@ -531,7 +531,7 @@ if __name__ == '__main__':
           for n_finetune_loop in [20]:
             print(n_finetune_loop)
             trainer.config.n_finetune_loop = n_finetune_loop
-            for learning_rate in [1e-2]:
+            for learning_rate in [args.fine_tune_lr]:
               print("learning rate:" + str(learning_rate))
               trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
               anti_causal_finetune_loss = []
