@@ -84,8 +84,8 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  g.manual_seed(0)
-  set_seed(0)
+  # g.manual_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 

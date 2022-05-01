@@ -52,13 +52,13 @@ if __name__ == '__main__':
     args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01]
 
   if args.model_name == "adp_invar_anti_causal":
-    for reg_lambda in args.reg_lambda_list:
-    # for reg_lambda in np.logspace(-1, 4, num=10):
-        for reg_lambda_2 in args.reg_lambda_2_list:
-        # for reg_lambda_2 in np.logspace(-1, 4, num=10):
+    # for reg_lambda in args.reg_lambda_list:
+    for reg_lambda in np.logspace(-1, 4, num=10):
+        # for reg_lambda_2 in args.reg_lambda_2_list:
+        for reg_lambda_2 in np.logspace(-1, 4, num=10):
             for gamma in [0.9]:
-                for n_loop in [20]:
-                    for lr in [1e-4]:
+                for n_loop in [50]:
+                    for lr in [1e-2, 1e-3]:
                         # synthetical anti-causal
                         # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
                         # run_cmd(cmd)

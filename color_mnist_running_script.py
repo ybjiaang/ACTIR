@@ -32,8 +32,9 @@ with open(filename, 'a', newline='') as file:
         colname.append("Causal " + str(point))
     writer.writerow(colname)
 
+# 774.2636826811278,4.641588833612779
 for _ in range(20):
-    cmd = 'python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr 1e-2 --reg_lambda 20 --reg_lambda_2 100 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr 1e-2 --reg_lambda 774.2636826811278 --reg_lambda_2 4.641588833612779 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)
     run_cmd(cmd)
