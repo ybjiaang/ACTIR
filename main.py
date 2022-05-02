@@ -126,6 +126,7 @@ if __name__ == '__main__':
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
   parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
   parser.add_argument('--downsample', action='store_true', help='whether to downsample')
+  parser.add_argument('--resnet_dim', type=int, default= 32, help='resnet dimension')
 
   # camelyon17 specifics
   parser.add_argument('--data_dir', type=str, default= "dataset/PACS", help='where to put data')
@@ -147,7 +148,7 @@ if __name__ == '__main__':
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {args.device} device")
-  print(args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, args.lr)
+  print(args.reg_lambda, args.reg_lambda_2, args.gamma, args.n_outer_loop, args.lr, args.resnet_dim)
 
   # create dictionary if not exist
   if not os.path.exists(args.model_save_dir):
@@ -313,7 +314,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=128,
+                d_out=args.resnet_dim,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -325,7 +326,7 @@ if __name__ == '__main__':
         }
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=128,
+                d_out=args.resnet_dim,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     Phi = ResNet(Phi)
@@ -338,7 +339,7 @@ if __name__ == '__main__':
 
     Phi = initialize_torchvision_model(
                 name='resnet18',
-                d_out=128,
+                d_out=args.resnet_dim,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
     # Phi = ResNet(Phi)
@@ -602,13 +603,13 @@ if __name__ == '__main__':
       plt.clf()
 
       df = create_DF(np.array(erm_acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'erm')
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci=68, label = 'erm')
 
       df = create_DF(np.array(adp_invar_anti_acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'adaptive causal')
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci=68, label = 'adaptive causal')
     
       df = create_DF(np.array(maml_acc_lists).T, np.array(args.n_fine_tune_points))
-      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci='sd', label = 'maml')
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci=68, label = 'maml')
 
       # other plot stuff
       ax = plt.gca()

@@ -399,12 +399,17 @@ def fine_tunning_test(trainer, config, test_finetune_dataset, test_dataset, n_fi
 
     if test_unlabelled_dataset is not None:
       if run_proj_gd:
-        trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset, projected_gd=True)
-        _, proj_gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
-        projected_gd_finetuned_loss+=proj_gd_loss_this_epoch
+        # model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabeld_dataset =test_unlabelled_dataset, projected_gd=True)
+        # _, proj_gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+        # projected_gd_finetuned_loss+=proj_gd_loss_this_epoch
+        model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabeld_dataset =test_unlabelled_dataset,  projected_gd=True)
+        proj_gd_loss_this_epoch, _ = trainer.test(test_dataset, input_model = model, print_flag=False)
+        finetuned_loss+=proj_gd_loss_this_epoch
 
-      trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
-      _, gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+      # trainer.finetune_test(partical_test_finetune_dataset, test_unlabelled_dataset)
+      # _, gd_loss_this_epoch = trainer.test(test_dataset, print_flag=False)
+      model = trainer.finetune_test(partical_test_finetune_dataset, test_unlabeld_dataset =test_unlabelled_dataset)
+      gd_loss_this_epoch, _ = trainer.test(test_dataset, input_model = model, print_flag=False)
       finetuned_loss+=gd_loss_this_epoch
     else:
       model = trainer.finetune_test(partical_test_finetune_dataset)
