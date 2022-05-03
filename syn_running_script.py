@@ -23,13 +23,11 @@ if os.path.exists(filename):
 n_fine_tune_points = [1, 5, 10]
 with open(filename, 'a', newline='') as file: 
     writer = csv.writer(file)
-    colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal", "Causal Base", "Causal"]
+    colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal"
     for point in n_fine_tune_points:
         colname.append("ERM " + str(point))
         colname.append("MAML " + str(point))
         colname.append("Anti Causal " + str(point))
-        colname.append("Causal (projected) " + str(point))
-        colname.append("Causal " + str(point))
     writer.writerow(colname)
 
 for _ in range(100):

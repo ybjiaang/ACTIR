@@ -555,49 +555,47 @@ if __name__ == '__main__':
       np.save(fine_saved_dir + "/anti_causal_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(adp_invar_anti_acc_lists))
       
 
-  """ Adaptive Invariant Causal """
-  if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-    if not args.run_fine_tune_test_standalone:
-      model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
-      trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
+  # """ Adaptive Invariant Causal """
+  # if args.model_name == "adp_invar" or args.compare_all_invariant_models:
+  #   if not args.run_fine_tune_test_standalone:
+  #     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
+  #     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
 
-      print("adp_invar training...")
-      trainer.train(train_dataset, args.batch_size)
-      trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
-      torch.save(trainer.model, './anti.pt')
-      print("adp_invar test...")
-      adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
+  #     print("adp_invar training...")
+  #     trainer.train(train_dataset, args.batch_size)
+  #     trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
+  #     torch.save(trainer.model, './anti.pt')
+  #     print("adp_invar test...")
+  #     adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
 
-      trainer.config.n_finetune_loop = 2
+  #     trainer.config.n_finetune_loop = 2
       
-      if args.hyper_param_tuning:
-        with open(args.cvs_dir, 'a', newline='') as file: 
-          writer = csv.writer(file)
-          row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_base_loss]
-          writer.writerow(row)
+  #     if args.hyper_param_tuning:
+  #       with open(args.cvs_dir, 'a', newline='') as file: 
+  #         writer = csv.writer(file)
+  #         row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_base_loss]
+  #         writer.writerow(row)
 
-      if args.run_fine_tune_test:
-        causal_proj_gd_losses = []
-        causal_gd_losses = []
-        for n_tune_points in  args.n_fine_tune_points:
-          causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
-          causal_proj_gd_losses.append(causal_proj_gd_loss)
-          causal_gd_losses.append(causal_gd_loss)
+  #     if args.run_fine_tune_test:
+  #       causal_proj_gd_losses = []
+  #       causal_gd_losses = []
+  #       for n_tune_points in  args.n_fine_tune_points:
+  #         causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
+  #         causal_proj_gd_losses.append(causal_proj_gd_loss)
+  #         causal_gd_losses.append(causal_gd_loss)
 
   if args.compare_all_invariant_models:
     if not args.run_fine_tune_test_standalone:
       with open(args.cvs_dir, 'a', newline='') as file: 
         writer = csv.writer(file)
-        row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss]
+        row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss]
         if args.run_fine_tune_test:
           for i, n_tune_points in enumerate(args.n_fine_tune_points):
             row.append(erm_finetune_loss[i])
             row.append(maml_finetune_loss[i])
             row.append(anti_causal_finetune_loss[i])
-            row.append(causal_proj_gd_losses[i])
-            row.append(causal_gd_losses[i])
         writer.writerow(row)
-      print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss, adp_invar_base_loss, adp_invar_loss)
+      print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss)
     else:
       fig = plt.figure()
       plt.clf()
