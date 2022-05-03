@@ -22,6 +22,7 @@ import seaborn as sns
 import pandas as pd
 
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, AntiCausalControlDatasetMultiClass
 from dataset.bike_env import BikeSharingDataset
@@ -84,8 +85,8 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  # g.manual_seed(0)
-  # set_seed(0)
+  g.manual_seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -98,7 +99,7 @@ if __name__ == '__main__':
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
   parser.add_argument('--lr',  type=float, default= 1e-4, help='learning rate')
-  parser.add_argument('--n_outer_loop',  type=int, default= 50, help='outer loop size')
+  parser.add_argument('--n_outer_loop',  type=int, default= 5, help='outer loop size')
   parser.add_argument('--n_finetune_loop',  type=int, default= 20, help='finetune loop size')
 
   # different models
@@ -298,14 +299,33 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    hidden_dims = 64
-    lin1 = nn.Linear(input_dim, hidden_dims)
-    lin2 = nn.Linear(hidden_dims, hidden_dims)
-    lin3 = nn.Linear(hidden_dims, phi_odim)
-    for lin in [lin1, lin2, lin3]:
-        nn.init.xavier_uniform_(lin.weight)
-        nn.init.zeros_(lin.bias)
-    Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    # hidden_dims = 64
+    # lin1 = nn.Linear(input_dim, hidden_dims)
+    # lin2 = nn.Linear(hidden_dims, hidden_dims)
+    # lin3 = nn.Linear(hidden_dims, phi_odim)
+    # for lin in [lin1, lin2, lin3]:
+    #     nn.init.xavier_uniform_(lin.weight)
+    #     nn.init.zeros_(lin.bias)
+    # Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+
+    class Net(nn.Module):
+        def __init__(self):
+            super(Net, self).__init__()
+            self.conv1 = nn.Conv2d(2, 20, 5, 1)
+            self.conv2 = nn.Conv2d(20, 50, 5, 1)
+            self.fc1 = nn.Linear(4*4*50, 500)
+            self.fc2 = nn.Linear(500, phi_odim)
+
+        def forward(self, x):
+            x = F.relu(self.conv1(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = F.relu(self.conv2(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = x.view(-1, 4*4*50)
+            x = F.relu(self.fc1(x))
+            x = self.fc2(x)
+            return x
+    Phi = Net()
 
   if args.dataset == "vlcs":
     """use resnet18"""
@@ -406,8 +426,8 @@ if __name__ == '__main__':
       print("erm test...")
       erm_loss = trainer.test(test_dataset)
 
-      print("erm val...")
-      erm_loss_val = trainer.test(val_dataset)
+      # print("erm val...")
+      # erm_loss_val = trainer.test(val_dataset)
 
       if args.run_fine_tune_test:
           for n_finetune_loop in [20]:
@@ -489,9 +509,9 @@ if __name__ == '__main__':
       print("adp_invar anti-causal test...")
       adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-      print("adp_invar anti-causal test val ...")
-      adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
-      #adp_invar_anti_causal_base_loss_val = 0
+      # print("adp_invar anti-causal test val ...")
+      # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
+      adp_invar_anti_causal_base_loss_val = 0
 
       if args.hyper_param_tuning:
         with open(args.cvs_dir, 'a', newline='') as file: 
