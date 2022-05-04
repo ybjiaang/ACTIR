@@ -23,7 +23,7 @@ if os.path.exists(filename):
 n_fine_tune_points = [1, 5, 10]
 with open(filename, 'a', newline='') as file: 
     writer = csv.writer(file)
-    colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal"
+    colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal"]
     for point in n_fine_tune_points:
         colname.append("ERM " + str(point))
         colname.append("MAML " + str(point))
@@ -31,8 +31,8 @@ with open(filename, 'a', newline='') as file:
     writer.writerow(colname)
 
 for _ in range(100):
-    cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
-    # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=anti-multi --classification --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --lr 1e-2 --fine_tune_lr 1e-2 --classification --causal_dir_syn=anti --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     # cmd = 'python main.py --compare_all_invariant_models --causal_dir_syn=causal --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)

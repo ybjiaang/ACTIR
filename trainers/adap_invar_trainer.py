@@ -4,6 +4,7 @@ from torch import nn
 import copy
 from tqdm import tqdm
 from torch.autograd import grad
+import torch.autograd as autograd
 import os
 
 from misc import mean_confidence_interval, batchify, HSICLoss, DiscreteConditionalLinearHSICLoss, ConditionalCovaraince, ConditionalHSICLoss, env_batchify, DiscreteConditionalExpecationTest, DiscreteConditionalHSICLoss, printModelParam, SampleCovariance
@@ -86,6 +87,7 @@ class AdaptiveInvariantNNTrainer():
         #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
         # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
         # reg_loss = DiscreteConditionalLinearHSICLoss(f_beta, f_eta, y)
+        # reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
         reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
         # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
         # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean() 
@@ -124,7 +126,16 @@ class AdaptiveInvariantNNTrainer():
     # print(f_beta + f_eta)
     # print(y)
     # print(reg_loss.item())
+    # if self.reg_lambda > 1.0:
+    #   loss /= self.reg_lambda
     return loss
+
+  def gradient_penalty(self, f_beta, f_eta, y, env_ind):
+    grad_1 = autograd.grad(self.contraint_loss(f_beta[0::2], f_eta[0::2], y[0::2], env_ind), [self.model.etas[env_ind]], create_graph=True)[0]
+    grad_2 = autograd.grad(self.contraint_loss(f_beta[1::2], f_eta[1::2], y[1::2], env_ind), [self.model.etas[env_ind]], create_graph=True)[0]
+    result = torch.sum(grad_1 * grad_2)
+
+    return result
     
   # Define training Loop
   def train(self, train_dataset, batch_size, n_outer_loop = 100, n_inner_loop = 30):
@@ -150,8 +161,11 @@ class AdaptiveInvariantNNTrainer():
             # print(x)
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
-            phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
-            # phi_loss += self.reg_lambda_2 * grad(contraint_loss, self.model.beta, create_graph=True)[0].pow(2).mean()
+            # phi_loss += self.reg_lambda_2 * self.gradient_penalty(f_beta, f_eta, y, env_ind)
+            gradient = grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
+            phi_loss += self.reg_lambda_2 * gradient
+            scale = torch.tensor(1.).to(self.config.device).requires_grad_()
+            phi_loss += self.reg_lambda_2 * grad(self.criterion(f_beta * scale, y), [scale], create_graph=True)[0].pow(2).mean()
             # print(f_beta , f_eta)
             # phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
             
@@ -161,7 +175,9 @@ class AdaptiveInvariantNNTrainer():
               _, predicted = torch.max((f_beta + f_eta).data, 1)
               loss += (predicted == y).sum()
               total += y.size(0)
-
+        # print(gradient.detach().numpy())
+        # if self.reg_lambda_2 > 0:
+        #   phi_loss /= self.reg_lambda_2
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()

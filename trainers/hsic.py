@@ -13,6 +13,7 @@ class HSIC():
     self.config = config
     self.classification = self.config.classification
     self.num_class = config.num_class
+    self.config = config
 
     # define loss
     self.criterion = loss_fn
@@ -28,7 +29,7 @@ class HSIC():
 
     self.model.train()
 
-    for t in tqdm(range(n_outer_loop)):
+    for t in tqdm(range(self.config.n_outer_loop)):
       for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):

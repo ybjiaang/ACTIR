@@ -32,7 +32,8 @@ with open(filename, 'a', newline='') as file:
 
 # 774.2636826811278,4.641588833612779
 for _ in range(20):
-    cmd = ' python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr 1e-2 --fine_tune_lr 1e-4 --reg_lambda 20 --reg_lambda_2 100 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    # cmd = ' python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr 1e-2 --fine_tune_lr 1e-4 --reg_lambda 20 --reg_lambda_2 100 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --run_fine_tune_test --n_fine_tune_tests 100 --n_fine_tune_points'.format(filename)
+    cmd = ' python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr 1e-2 --fine_tune_lr 1e-4 --reg_lambda 10 --reg_lambda_2 0.1 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --run_fine_tune_test --n_fine_tune_tests 10 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)
     run_cmd(cmd)
