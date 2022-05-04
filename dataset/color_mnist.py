@@ -48,7 +48,7 @@ class ColorMnist(object):
         def torch_xor(a, b):
             return (a-b).abs() # Assumes both inputs are either 0 or 1
         # 2x subsample for computational convenience
-        images = images.reshape((-1, 28, 28))#[:, ::2, ::2]
+        images = images.reshape((-1, 28, 28))[:, ::2, ::2]
         # Assign a binary label based on the digit; flip label with probability 0.25
         labels = (labels < 5).float()
         labels = torch_xor(labels, torch_bernoulli(0.25, len(labels)))
@@ -60,9 +60,10 @@ class ColorMnist(object):
         
         if return_color:
             return (images.reshape((-1, 2*14*14)).float() / 255., colors[:, None])
+            # return (images.float() / 255., colors[:, None])
 
-        # return (images.reshape((-1, 2*14*14)).float() / 255., labels.long())
-        return (images.float() / 255., labels.long())
+        return (images.reshape((-1, 2*14*14)).float() / 255., labels.long())
+        # return (images.float() / 255., labels.long())
 
     def sample_envs_z(self, env_ind = 2, n = 100):
         return self.make_environment(self.mnist_val[0], self.mnist_val[1], 0.5, return_color=True)

@@ -197,7 +197,7 @@ class AdaptiveInvariantNNTrainer():
         phi_cpu = phi.detach().cpu().numpy()
         x_cpu = x.detach().cpu().numpy()
         z_cpu = z.detach().cpu().numpy()
-        combined = np.concatenate((phi_cpu, x_cpu, z_cpu), axis=1)
+        combined = np.concatenate((phi_cpu, z_cpu), axis=1)
         ret_list.append(combined)
       return np.concatenate(ret_list, axis=0)
 

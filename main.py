@@ -85,8 +85,8 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  # g.manual_seed(0)
-  # set_seed(0)
+  g.manual_seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -127,7 +127,7 @@ if __name__ == '__main__':
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
   parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
   parser.add_argument('--downsample', action='store_true', help='whether to downsample')
-  parser.add_argument('--resnet_dim', type=int, default= 32, help='resnet dimension')
+  parser.add_argument('--resnet_dim', type=int, default= 8, help='resnet dimension')
 
   # camelyon17 specifics
   parser.add_argument('--data_dir', type=str, default= "dataset/PACS", help='where to put data')
@@ -299,33 +299,33 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    # hidden_dims = 64
-    # lin1 = nn.Linear(input_dim, hidden_dims)
-    # lin2 = nn.Linear(hidden_dims, hidden_dims)
-    # lin3 = nn.Linear(hidden_dims, phi_odim)
-    # for lin in [lin1, lin2, lin3]:
-    #     nn.init.xavier_uniform_(lin.weight)
-    #     nn.init.zeros_(lin.bias)
-    # Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    hidden_dims = 64
+    lin1 = nn.Linear(input_dim, hidden_dims)
+    lin2 = nn.Linear(hidden_dims, hidden_dims)
+    lin3 = nn.Linear(hidden_dims, phi_odim)
+    for lin in [lin1, lin2, lin3]:
+        nn.init.xavier_uniform_(lin.weight)
+        nn.init.zeros_(lin.bias)
+    Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
 
-    class Net(nn.Module):
-        def __init__(self):
-            super(Net, self).__init__()
-            self.conv1 = nn.Conv2d(2, 20, 5, 1)
-            self.conv2 = nn.Conv2d(20, 50, 5, 1)
-            self.fc1 = nn.Linear(4*4*50, 500)
-            self.fc2 = nn.Linear(500, phi_odim)
+    # class Net(nn.Module):
+    #     def __init__(self):
+    #         super(Net, self).__init__()
+    #         self.conv1 = nn.Conv2d(2, 20, 5, 1)
+    #         self.conv2 = nn.Conv2d(20, 50, 5, 1)
+    #         self.fc1 = nn.Linear(4*4*50, 500)
+    #         self.fc2 = nn.Linear(500, phi_odim)
 
-        def forward(self, x):
-            x = F.relu(self.conv1(x))
-            x = F.max_pool2d(x, 2, 2)
-            x = F.relu(self.conv2(x))
-            x = F.max_pool2d(x, 2, 2)
-            x = x.view(-1, 4*4*50)
-            x = F.relu(self.fc1(x))
-            x = self.fc2(x)
-            return x
-    Phi = Net()
+    #     def forward(self, x):
+    #         x = F.relu(self.conv1(x))
+    #         x = F.max_pool2d(x, 2, 2)
+    #         x = F.relu(self.conv2(x))
+    #         x = F.max_pool2d(x, 2, 2)
+    #         x = x.view(-1, 4*4*50)
+    #         x = F.relu(self.fc1(x))
+    #         x = self.fc2(x)
+    #         return x
+    # Phi = Net()
 
   if args.dataset == "vlcs":
     """use resnet18"""
