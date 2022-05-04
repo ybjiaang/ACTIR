@@ -93,8 +93,8 @@ if __name__ == '__main__':
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 1000, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 0.16, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 5, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 0.16237767391887217, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 4.832930238571752, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
@@ -283,11 +283,9 @@ if __name__ == '__main__':
     
   if args.dataset == "syn":
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 8),
+              nn.Linear(input_dim, 4),
               nn.ReLU(),
-              nn.Linear(8, 8),
-              nn.ReLU(),
-              nn.Linear(8, phi_odim)
+              nn.Linear(4, phi_odim)
               # nn.Linear(input_dim, phi_odim)
           )
 
