@@ -43,20 +43,20 @@ if __name__ == '__main__':
       os.remove(filename)
 
   if not args.reg_lambda_list:
+    if args.dataset == "color_mnist" or args.dataset == "anti":
+      args.reg_lambda_list = np.logspace(-1, 3, num=10)
+    else:
       args.reg_lambda_list = [10, 1, 0.1]
-    # args.reg_lambda_list = [1000, 500, 100, 20, 10, 1]
 
   if not args.reg_lambda_2_list:
+    if args.dataset == "color_mnist" or args.dataset == "anti":
+      args.reg_lambda_2_list = np.logspace(-1, 3, num=10)
+    else:
       args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01]
-    # args.reg_lambda_2_list = [1, 10, 100, 1000]
 
   if args.model_name == "adp_invar_anti_causal":
-    # for reg_lambda in args.reg_lambda_list:
-    for reg_lambda in np.logspace(-1, 3, num=10):
-    # for reg_lambda in [1, 2, 3, 4, 5, 6, 7, 8]:
-        # for reg_lambda_2 in args.reg_lambda_2_list:
-        for reg_lambda_2 in np.logspace(-1, 3, num=10):
-        # for reg_lambda_2 in [1.5]:
+    for reg_lambda in args.reg_lambda_list:
+        for reg_lambda_2 in args.reg_lambda_2_list:
             for gamma in [0.9]:
                 for n_loop in [15]:
                     for lr in [1e-3]:
@@ -66,6 +66,8 @@ if __name__ == '__main__':
 
                         # synthetical anti-causal classification
                         if args.dataset == "anti":
+                          n_loop = 100
+                          lr = 1e-2
                           cmd = 'python main.py --lr={:} --n_outer_loop={:} --model_name=adp_invar_anti_causal --causal_dir_syn=anti --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(lr, n_loop, reg_lambda, reg_lambda_2, filename, gamma)
                           run_cmd(cmd)
                         
@@ -84,6 +86,8 @@ if __name__ == '__main__':
                             run_cmd(cmd)
                         
                         if args.dataset == "color_mnist":
+                            n_loop = 15
+                            lr = 1e-3
                             cmd = 'python main.py --classification --lr={:} --n_outer_loop={:} --model_name=adp_invar_anti_causal --dataset=color_mnist --phi_odim=8 --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(lr, n_loop, reg_lambda, reg_lambda_2, filename, gamma)
                             run_cmd(cmd)
                         
@@ -92,11 +96,13 @@ if __name__ == '__main__':
                             run_cmd(cmd)
 
   if not args.irm_reg_lambda_list:
-    args.irm_reg_lambda_list = [0.1, 1, 5, 10, 0.01, 20, 100, 150, 200]
+    if args.dataset == "color_mnist" or args.dataset == "anti":
+      args.irm_reg_lambda_list = np.logspace(-2, 4, num=30)
+    else:
+      args.irm_reg_lambda_list = [0.1, 1, 5, 10, 0.01, 20, 100, 150, 200]
   if args.model_name == "irm":
     n_loop = 50
-    # for reg_lambda in args.irm_reg_lambda_list:
-    for reg_lambda in np.logspace(-2, 4, num=30):
+    for reg_lambda in args.irm_reg_lambda_list:
         if args.dataset == "anti":
           cmd = 'python main.py --lr=1e-2 --n_outer_loop=100 --model_name=irm --causal_dir_syn=anti --classification --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
           run_cmd(cmd)              

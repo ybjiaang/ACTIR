@@ -85,8 +85,8 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  # g.manual_seed(0)
-  # set_seed(0)
+  g.manual_seed(0)
+  set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -544,7 +544,7 @@ if __name__ == '__main__':
           fig.savefig("disentangle_" + config.dataset + ".png")
 
 
-      disentanglment_experiment(env, trainer, args)
+      # disentanglment_experiment(env, trainer, args)
 
 
       if args.run_fine_tune_test:
