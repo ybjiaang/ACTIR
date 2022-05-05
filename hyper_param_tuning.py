@@ -51,14 +51,14 @@ if __name__ == '__main__':
     # args.reg_lambda_2_list = [1, 10, 100, 1000]
 
   if args.model_name == "adp_invar_anti_causal":
-    for reg_lambda in args.reg_lambda_list:
-    # for reg_lambda in np.logspace(-1, 3, num=20):
+    # for reg_lambda in args.reg_lambda_list:
+    for reg_lambda in np.logspace(-1, 3, num=20):
     # for reg_lambda in [1, 2, 3, 4, 5, 6, 7, 8]:
-        for reg_lambda_2 in args.reg_lambda_2_list:
-        # for reg_lambda_2 in np.logspace(-1, 3, num=20):
+        # for reg_lambda_2 in args.reg_lambda_2_list:
+        for reg_lambda_2 in np.logspace(-1, 3, num=20):
         # for reg_lambda_2 in [1.5]:
             for gamma in [0.9]:
-                for n_loop in [30]:
+                for n_loop in [100]:
                     for lr in [1e-2]:
                         # synthetical anti-causal
                         # cmd = 'python main.py --model_name=adp_invar_anti_causal --causal_dir_syn=anti --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma)
@@ -95,8 +95,11 @@ if __name__ == '__main__':
     args.irm_reg_lambda_list = [0.1, 1, 5, 10, 0.01, 20, 100, 150, 200]
   if args.model_name == "irm":
     n_loop = 50
-    for reg_lambda in args.irm_reg_lambda_list:
-    # for reg_lambda in np.logspace(-2, 4, num=30):
+    # for reg_lambda in args.irm_reg_lambda_list:
+    for reg_lambda in np.logspace(-2, 4, num=30):
+        if args.dataset == "anti":
+          cmd = 'python main.py --lr=1e-2 --n_outer_loop=100 --model_name=irm --causal_dir_syn=anti --classification --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
+          run_cmd(cmd)              
         if args.dataset == "vlcs":
             cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
             run_cmd(cmd)

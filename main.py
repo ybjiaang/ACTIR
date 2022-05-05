@@ -85,16 +85,16 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  g.manual_seed(0)
-  set_seed(0)
+  # g.manual_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 1000, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 0.16237767391887217, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 4.832930238571752, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 12.689610031679221, help='regularization coeff for irm')
+  parser.add_argument('--reg_lambda', type=float, default= 8, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 1.5, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
@@ -299,33 +299,33 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    hidden_dims = 64
-    lin1 = nn.Linear(input_dim, hidden_dims)
-    lin2 = nn.Linear(hidden_dims, hidden_dims)
-    lin3 = nn.Linear(hidden_dims, phi_odim)
-    for lin in [lin1, lin2, lin3]:
-        nn.init.xavier_uniform_(lin.weight)
-        nn.init.zeros_(lin.bias)
-    Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
+    # hidden_dims = 64
+    # lin1 = nn.Linear(input_dim, hidden_dims)
+    # lin2 = nn.Linear(hidden_dims, hidden_dims)
+    # lin3 = nn.Linear(hidden_dims, phi_odim)
+    # for lin in [lin1, lin2, lin3]:
+    #     nn.init.xavier_uniform_(lin.weight)
+    #     nn.init.zeros_(lin.bias)
+    # Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
 
-    # class Net(nn.Module):
-    #     def __init__(self):
-    #         super(Net, self).__init__()
-    #         self.conv1 = nn.Conv2d(2, 20, 5, 1)
-    #         self.conv2 = nn.Conv2d(20, 50, 5, 1)
-    #         self.fc1 = nn.Linear(4*4*50, 500)
-    #         self.fc2 = nn.Linear(500, phi_odim)
+    class Net(nn.Module):
+        def __init__(self):
+            super(Net, self).__init__()
+            self.conv1 = nn.Conv2d(2, 20, 5, 1)
+            self.conv2 = nn.Conv2d(20, 50, 5, 1)
+            self.fc1 = nn.Linear(4*4*50, 500)
+            self.fc2 = nn.Linear(500, phi_odim)
 
-    #     def forward(self, x):
-    #         x = F.relu(self.conv1(x))
-    #         x = F.max_pool2d(x, 2, 2)
-    #         x = F.relu(self.conv2(x))
-    #         x = F.max_pool2d(x, 2, 2)
-    #         x = x.view(-1, 4*4*50)
-    #         x = F.relu(self.fc1(x))
-    #         x = self.fc2(x)
-    #         return x
-    # Phi = Net()
+        def forward(self, x):
+            x = F.relu(self.conv1(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = F.relu(self.conv2(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = x.view(-1, 4*4*50)
+            x = F.relu(self.fc1(x))
+            x = self.fc2(x)
+            return x
+    Phi = Net()
 
   if args.dataset == "vlcs":
     """use resnet18"""
@@ -544,7 +544,7 @@ if __name__ == '__main__':
           fig.savefig("disentangle_" + config.dataset + ".png")
 
 
-      # disentanglment_experiment(env, trainer, args)
+      disentanglment_experiment(env, trainer, args)
 
 
       if args.run_fine_tune_test:
