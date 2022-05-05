@@ -25,6 +25,7 @@ with open(filename, 'a', newline='') as file:
     writer = csv.writer(file)
     colname = ["HSIC", "IRM", "ERM", "MAML Train", "MAML", "Anti-Causal"]
     for point in n_fine_tune_points:
+        colname.append("IRM " + str(point))
         colname.append("ERM " + str(point))
         colname.append("MAML " + str(point))
         colname.append("Anti Causal " + str(point))

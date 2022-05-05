@@ -85,8 +85,8 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  g.manual_seed(0)
-  set_seed(0)
+  # g.manual_seed(0)
+  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
@@ -394,12 +394,16 @@ if __name__ == '__main__':
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
+    model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim)
+    trainer = IRM(model, criterion, args)
+
     if not args.run_fine_tune_test_standalone:
-      model = BaseClass(input_dim, Phi, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
+      model.to(args.device)
       trainer = IRM(model, criterion, args)
-      
+
       print("irm training...")
       trainer.train(train_dataset, args.batch_size)
+      trainer.save_model()
 
       print("irm test...")
       irm_loss = trainer.test(test_dataset)
@@ -410,6 +414,28 @@ if __name__ == '__main__':
           row = [args.irm_reg_lambda, irm_loss]
           writer.writerow(row)
 
+      if args.run_fine_tune_test:
+          for n_finetune_loop in [args.n_finetune_loop]:
+              print(n_finetune_loop)
+              trainer.config.n_finetune_loop = n_finetune_loop
+              for learning_rate in [args.fine_tune_lr]:
+                  print("learning rate:" + str(learning_rate))
+                  trainer.fine_inner_lr = learning_rate
+                  irm_finetune_loss = []
+                  for n_tune_points in  args.n_fine_tune_points:
+                      irm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
+
+    else:
+      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
+      model.to(args.device)
+      trainer = IRM(model, criterion, args)
+      embedding_dataset = FolderDataset(trainer.emb_path)
+
+      irm_acc_lists = []
+      for n_tune_points in  args.n_fine_tune_points:
+        irm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+      
+      np.save(fine_saved_dir + "/irm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(irm_acc_lists))    
 
   """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
@@ -430,14 +456,12 @@ if __name__ == '__main__':
       # erm_loss_val = trainer.test(val_dataset)
 
       if args.run_fine_tune_test:
-          for n_finetune_loop in [20]:
+          for n_finetune_loop in [args.n_finetune_loop]:
               print(n_finetune_loop)
               trainer.config.n_finetune_loop = n_finetune_loop
               for learning_rate in [args.fine_tune_lr]:
                   print("learning rate:" + str(learning_rate))
                   trainer.fine_inner_lr = learning_rate
-                  # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
-              # anti_causal_finetune_loss = []
                   erm_finetune_loss = []
                   for n_tune_points in  args.n_fine_tune_points:
                       erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
@@ -470,7 +494,7 @@ if __name__ == '__main__':
       maml_loss = trainer.test(test_dataset)
 
       if args.run_fine_tune_test:
-          for n_finetune_loop in [20]:
+          for n_finetune_loop in [args.n_finetune_loop]:
               print(n_finetune_loop)
               trainer.config.n_finetune_loop = n_finetune_loop
               for learning_rate in [args.fine_tune_lr]:
@@ -548,20 +572,15 @@ if __name__ == '__main__':
 
 
       if args.run_fine_tune_test:
-        if True:
-          for n_finetune_loop in [20]:
-            print(n_finetune_loop)
-            trainer.config.n_finetune_loop = n_finetune_loop
-            for learning_rate in [args.fine_tune_lr]:
-              print("learning rate:" + str(learning_rate))
-              trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
-              anti_causal_finetune_loss = []
-              for n_tune_points in  args.n_fine_tune_points:
-                anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
-        else:
-          anti_causal_finetune_loss = []
-          for n_tune_points in  args.n_fine_tune_points:
-            anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
+        for n_finetune_loop in [args.n_finetune_loop]:
+          print(n_finetune_loop)
+          trainer.config.n_finetune_loop = n_finetune_loop
+          for learning_rate in [args.fine_tune_lr]:
+            print("learning rate:" + str(learning_rate))
+            trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
+            anti_causal_finetune_loss = []
+            for n_tune_points in  args.n_fine_tune_points:
+              anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
     else:
       model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
       model.to(args.device)
@@ -611,6 +630,7 @@ if __name__ == '__main__':
         row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss]
         if args.run_fine_tune_test:
           for i, n_tune_points in enumerate(args.n_fine_tune_points):
+            row.append(irm_finetune_loss[i])
             row.append(erm_finetune_loss[i])
             row.append(maml_finetune_loss[i])
             row.append(anti_causal_finetune_loss[i])
@@ -619,6 +639,9 @@ if __name__ == '__main__':
     else:
       fig = plt.figure()
       plt.clf()
+
+      df = create_DF(np.array(irm_acc_lists).T, np.array(args.n_fine_tune_points))
+      sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci=68, label = 'irm')
 
       df = create_DF(np.array(erm_acc_lists).T, np.array(args.n_fine_tune_points))
       sns.lineplot(x='num of finetuning points', y='finetuned accuary', err_style=err_sty, data = df, ci=68, label = 'erm')
