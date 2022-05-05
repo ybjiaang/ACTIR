@@ -385,12 +385,12 @@ if __name__ == '__main__':
       model = BaseClass(input_dim, Phi, phi_dim = args.phi_odim).to(args.device)
       trainer = HSIC(model, criterion, args)
 
-      print("hsic training...")
-      trainer.train(train_dataset, args.batch_size)
+      # print("hsic training...")
+      # trainer.train(train_dataset, args.batch_size)
 
-      print("hsic test...")
-      hsic_loss = trainer.test(test_dataset)
-      # hsic_loss = 0
+      # print("hsic test...")
+      # hsic_loss = trainer.test(test_dataset)
+      hsic_loss = 0
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
