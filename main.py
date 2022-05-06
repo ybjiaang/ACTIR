@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
-  parser.add_argument('--irm_reg_lambda', type=float, default= 12.689610031679221, help='regularization coeff for irm')
+  parser.add_argument('--irm_reg_lambda', type=float, default= 52.98316906283707, help='regularization coeff for irm')
   parser.add_argument('--reg_lambda', type=float, default= 4.520353656360243, help='regularization coeff for adaptive invariant learning')
   parser.add_argument('--reg_lambda_2', type=float, default= 2.807216203941177, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
@@ -158,12 +158,12 @@ if __name__ == '__main__':
   if not os.path.exists(args.model_save_dir):
     os.makedirs(args.model_save_dir)
 
-  args.model_save_dir += "/" + str(args.dataset)
+  args.model_save_dir += "/" + str(args.random_seed) + "_" + str(args.dataset)
   if args.dataset == "vlcs" or args.dataset == "pacs":
     args.model_save_dir += "_" + str(args.test_index)# + "_" + str(args.n_outer_loop)
     #if args.dataset == "pacs":
     #    args.model_save_dir += "_" + str(args.n_outer_loop)
-    print(args.model_save_dir)
+  print(args.model_save_dir)
   if not os.path.exists(args.model_save_dir):
     os.makedirs(args.model_save_dir)
   
