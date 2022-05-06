@@ -64,8 +64,8 @@ def maml_iter_merge(itrs, config):
     for v in itrs[i]:
       # print(len(v))
       # v_sqt_list.append((v[0].to(config.device), v[1].to(config.device)))
-      v_sqt_list.append((v[0][0::2].to(config.device), v[1][0::2].to(config.device)))
-      v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
+      v_sqt_list.append((v[0][0::2], v[1][0::2]))
+      v_qrt_set.append((v[0][1::2], v[1][1::2]))
     yield v_sqt_list, v_qrt_set
 
 def batchify(dataset, batch_size, config):

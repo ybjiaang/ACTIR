@@ -37,8 +37,8 @@ class LinearMAML():
     
     loss_query = 0
     for env_ind in range(n_train_envs):
-      x, y = train_batch[env_ind]
-      x_query, y_query = train_query_batch[env_ind]
+      x, y = train_batch[env_ind].to(self.config.device)
+      x_query, y_query = train_query_batch[env_ind].to(self.config.device)
       f_beta, _ = self.model(x)
       loss = self.criterion(f_beta, y)
       grad = torch.autograd.grad(loss, self.param_to_update_inner_loop)
