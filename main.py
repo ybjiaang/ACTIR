@@ -85,16 +85,14 @@ class ResNet(torch.nn.Module):
 
 if __name__ == '__main__':
   g = torch.Generator()
-  # g.manual_seed(0)
-  # set_seed(0)
 
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--n_envs', type=int, default= 5, help='number of enviroments per training epoch')
   parser.add_argument('--batch_size', type=int, default= 128, help='batch size')
   parser.add_argument('--irm_reg_lambda', type=float, default= 12.689610031679221, help='regularization coeff for irm')
-  parser.add_argument('--reg_lambda', type=float, default= 8, help='regularization coeff for adaptive invariant learning')
-  parser.add_argument('--reg_lambda_2', type=float, default= 1.5, help='second regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda', type=float, default= 4.520353656360243, help='regularization coeff for adaptive invariant learning')
+  parser.add_argument('--reg_lambda_2', type=float, default= 2.807216203941177, help='second regularization coeff for adaptive invariant learning')
   parser.add_argument('--gamma', type=float, default= 0.9, help='interpolation parmameter')
   parser.add_argument('--phi_odim',  type=int, default= 3, help='Phi output size')
   parser.add_argument('--fine_tune_lr',  type=float, default= 1e-4, help='Fine tune learning rate')
@@ -143,8 +141,12 @@ if __name__ == '__main__':
   parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
   parser.add_argument('--save_test_phi', action='store_true', help='whether to save phi for finetune test')
   parser.add_argument('--nb_workers', type=int, default= 4, help='number of workers for dataLoaders')
+  parser.add_argument('--random_seed', type=int, default= 0, help='random seed')
 
   args = parser.parse_args()
+
+  g.manual_seed(args.random_seed)
+  set_seed(args.random_seed)
 
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -283,9 +285,11 @@ if __name__ == '__main__':
     
   if args.dataset == "syn":
     Phi = nn.Sequential(
-              nn.Linear(input_dim, 4),
+              nn.Linear(input_dim, 8),
               nn.ReLU(),
-              nn.Linear(4, phi_odim)
+              nn.Linear(8, 8),
+              nn.ReLU(),
+              nn.Linear(8, phi_odim)
               # nn.Linear(input_dim, phi_odim)
           )
 
