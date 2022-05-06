@@ -145,8 +145,9 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  g.manual_seed(args.random_seed)
-  set_seed(args.random_seed)
+  if not args.random_seed == -1:
+    g.manual_seed(args.random_seed)
+    set_seed(args.random_seed)
 
   # Get cpu or gpu device for training.
   args.device = "cuda" if torch.cuda.is_available() else "cpu"
