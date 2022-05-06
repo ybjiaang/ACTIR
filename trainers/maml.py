@@ -41,7 +41,7 @@ class LinearMAML():
       x.to(self.config.device)
       y.to(self.config.device)
 
-      x_query, y_query = train_query_batch[env_ind].to(self.config.device)
+      x_query, y_query = train_query_batch[env_ind]
       x_query.to(self.config.device)
       y_query.to(self.config.device)
 
