@@ -43,14 +43,18 @@ if __name__ == '__main__':
       os.remove(filename)
 
   if not args.reg_lambda_list:
-    if args.dataset == "color_mnist" or args.dataset == "anti":
+    if args.dataset == "color_mnist":
       args.reg_lambda_list = np.logspace(-1, 3, num=10)
+    elif args.dataset == "anti":
+      args.reg_lambda_list = np.logspace(-1, 2, num=20)
     else:
       args.reg_lambda_list = [10, 1, 0.1]
 
   if not args.reg_lambda_2_list:
-    if args.dataset == "color_mnist" or args.dataset == "anti":
+    if args.dataset == "color_mnist":
       args.reg_lambda_2_list = np.logspace(-1, 3, num=10)
+    elif args.dataset == "anti":
+      args.reg_lambda_2_list = np.logspace(-1, 2, num=20)
     else:
       args.reg_lambda_2_list = [0.1, 1, 5, 10, 0.01]
 
