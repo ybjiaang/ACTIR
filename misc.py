@@ -75,12 +75,28 @@ def itr_merge(itrs, config):
 
 def maml_iter_merge(itrs, config):
   num_itrs = len(itrs)
+  # find longest dataset
+  all_lens = []
   for i in range(num_itrs): 
+    all_lens.append(len(itrs[i]))
+  np_iterations = max(all_lens)
+
+  loops = []
+  for i in range(num_itrs):
+    loops.append(iter(itrs[i]))
+
+  for _ in range(np_iterations):
     v_sqt_list = []
     v_qrt_set = []
-    for v in itrs[i]:
-      v_sqt_list.append((v[0][0::2], v[1][0::2]))
-      v_qrt_set.append((v[0][1::2], v[1][1::2]))
+    for i in range(num_itrs): 
+      try:
+        v = next(loops[i])
+        v_sqt_list.append((v[0][0::2].to(config.device), v[1][0::2].to(config.device)))
+        v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
+      except StopIteration:
+        loops[i] = iter(itrs[i])
+        v_sqt_list.append((v[0][0::2].to(config.device), v[1][0::2].to(config.device)))
+        v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
     yield v_sqt_list, v_qrt_set
 
 def batchify(dataset, batch_size, config):

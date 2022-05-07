@@ -38,8 +38,6 @@ class LinearMAML():
     loss_query = 0
     for env_ind in range(n_train_envs):
       x, y = train_batch[env_ind]
-      x = x.to(self.config.device)
-      y = y.to(self.config.device)
 
       f_beta, _ = self.model(x)
       loss = self.criterion(f_beta, y)
@@ -52,19 +50,11 @@ class LinearMAML():
         loss = self.criterion(f_beta, y)
         grad = torch.autograd.grad(loss, fast_weights)
         fast_weights = list(map(lambda p: p[1] - self.fast_update_lr * p[0], zip(grad, fast_weights)))
-      
-      del x
-      del y
 
       x_query, y_query = train_query_batch[env_ind]
-      x_query = x_query.to(self.config.device)
-      y_query = y_query.to(self.config.device)
 
       f_beta_query, _ = self.model(x_query, fast_beta = fast_weights)
       loss_query += self.criterion(f_beta_query, y_query)
-
-      del x_query
-      del y_query
 
     loss_query = loss_query / n_train_envs
 
