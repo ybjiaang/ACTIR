@@ -40,7 +40,8 @@ if __name__ == '__main__':
 
   filename = log_directory + "/" + "test_"+ str(args.val_index)  +".csv"
   if os.path.exists(filename):
-      os.remove(filename)
+      pass
+      #os.remove(filename)
 
   if not args.reg_lambda_list:
     if args.dataset == "color_mnist":
@@ -96,7 +97,9 @@ if __name__ == '__main__':
                             run_cmd(cmd)
                         
                         if args.dataset == "camelyon17":
-                            cmd = 'python -u main.py --data_dir="./Camelyon17" --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --lr={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, lr, n_loop)
+                            n_loop = 25
+                            lr = 1e-4
+                            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --lr={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, lr, n_loop)
                             run_cmd(cmd)
 
   if not args.irm_reg_lambda_list:
