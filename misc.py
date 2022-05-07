@@ -70,7 +70,7 @@ def itr_merge(itrs, config):
           loops[i] = iter(itrs[i])
           v = next(loops[i])
           v_list.append((v[0].to(config.device), v[1].to(config.device)))
-        yield v_list
+      yield v_list
 
 
 def maml_iter_merge(itrs, config):
