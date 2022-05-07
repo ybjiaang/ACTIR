@@ -140,7 +140,7 @@ if __name__ == '__main__':
   parser.add_argument('--model_save_dir', type=str, default= "./saved_model", help='where to save model')
   parser.add_argument('--hyper_param_tuning', action='store_true', help='whether to do hyper-parameter tuning')
   parser.add_argument('--save_test_phi', action='store_true', help='whether to save phi for finetune test')
-  parser.add_argument('--nb_workers', type=int, default= 4, help='number of workers for dataLoaders')
+  parser.add_argument('--nb_workers', type=int, default= 16, help='number of workers for dataLoaders')
   parser.add_argument('--random_seed', type=int, default= 0, help='random seed')
 
   args = parser.parse_args()
@@ -493,7 +493,7 @@ if __name__ == '__main__':
       print("maml training...")
       maml_train_loss = trainer.train(train_dataset, args.batch_size)
       trainer.save_model()
-      
+
       print("maml test...")
       maml_loss = trainer.test(test_dataset)
 
