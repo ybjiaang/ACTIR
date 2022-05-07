@@ -58,7 +58,7 @@ def itr_merge(itrs, config):
 
     loops = []
     for i in range(num_itrs):
-      loops[i] = iter(itrs[i])
+      loops.append(iter(itrs[i]))
 
     for _ in range(np_iterations):
       v_list = []
