@@ -43,7 +43,6 @@ class ERM():
       for train in env_batchify(train_dataset, batch_size, self.config):
         loss = 0
         for env_ind in range(n_train_envs):
-          print(len(train))
           x, y = train[env_ind]
           f_beta, _ = self.model(x)
           loss += self.criterion(f_beta, y)
