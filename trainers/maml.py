@@ -35,7 +35,6 @@ class LinearMAML():
 
   def meta_update(self, train_batch, train_query_batch):
     n_train_envs = len(train_batch)
-    
     loss_query = 0
     for env_ind in range(n_train_envs):
       x, y = train_batch[env_ind]
@@ -80,8 +79,6 @@ class LinearMAML():
 
     self.model.train()
     for t in tqdm(range(self.config.n_outer_loop)):
-      train_spt_set = []
-      train_query_set = []
 
       for train_spt_set, train_query_set in maml_batchify(train_dataset, batch_size, self.config):
         loss = self.meta_update(train_spt_set, train_query_set)

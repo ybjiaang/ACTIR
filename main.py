@@ -493,8 +493,7 @@ if __name__ == '__main__':
       print("maml training...")
       maml_train_loss = trainer.train(train_dataset, args.batch_size)
       trainer.save_model()
-
-      torch.save(trainer.model, './maml.pt')
+      
       print("maml test...")
       maml_loss = trainer.test(test_dataset)
 

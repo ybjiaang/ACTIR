@@ -50,11 +50,23 @@ def itr_merge(itrs, config):
     for v in itrs[0]:
       yield (v[0].to(config.device), v[1].to(config.device))
   else:
+    all_lens = []
     for i in range(num_itrs): 
+      all_lens.append(len(itrs[i]))
+    np_iterations = max(all_lens)
+    for _ in range(np_iterations):
       v_list = []
-      for v in itrs[i]:
-        v_list.append((v[0].to(config.device), v[1].to(config.device)))
-      yield v_list
+      for i in range(num_itrs): 
+        try:
+          v = next(itrs[i])
+          v_list.append((v[0].to(config.device), v[1].to(config.device)))
+        except StopIteration:
+          itrs[i] = iter(itrs[i])
+          v = next(itrs[i])
+          v_list.append((v[0].to(config.device), v[1].to(config.device)))
+
+        yield v_list
+
 
 def maml_iter_merge(itrs, config):
   num_itrs = len(itrs)
@@ -62,8 +74,6 @@ def maml_iter_merge(itrs, config):
     v_sqt_list = []
     v_qrt_set = []
     for v in itrs[i]:
-      # print(len(v))
-      # v_sqt_list.append((v[0].to(config.device), v[1].to(config.device)))
       v_sqt_list.append((v[0][0::2], v[1][0::2]))
       v_qrt_set.append((v[0][1::2], v[1][1::2]))
     yield v_sqt_list, v_qrt_set
