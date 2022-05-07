@@ -50,21 +50,26 @@ def itr_merge(itrs, config):
     for v in itrs[0]:
       yield (v[0].to(config.device), v[1].to(config.device))
   else:
+    # find longest dataset
     all_lens = []
     for i in range(num_itrs): 
       all_lens.append(len(itrs[i]))
     np_iterations = max(all_lens)
+
+    loops = []
+    for i in range(num_itrs):
+      loops[i] = iter(itrs[i])
+
     for _ in range(np_iterations):
       v_list = []
       for i in range(num_itrs): 
         try:
-          v = next(itrs[i])
+          v = next(loops[i])
           v_list.append((v[0].to(config.device), v[1].to(config.device)))
         except StopIteration:
-          itrs[i] = iter(itrs[i])
-          v = next(itrs[i])
+          loops[i] = iter(itrs[i])
+          v = next(loops[i])
           v_list.append((v[0].to(config.device), v[1].to(config.device)))
-
         yield v_list
 
 
