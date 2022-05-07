@@ -95,6 +95,7 @@ def maml_iter_merge(itrs, config):
         v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
       except StopIteration:
         loops[i] = iter(itrs[i])
+        v = next(loops[i])
         v_sqt_list.append((v[0][0::2].to(config.device), v[1][0::2].to(config.device)))
         v_qrt_set.append((v[0][1::2].to(config.device), v[1][1::2].to(config.device)))
     yield v_sqt_list, v_qrt_set
