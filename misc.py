@@ -123,7 +123,7 @@ def env_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return itr_merge(dataloaders, config)
     # return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
 
@@ -156,7 +156,7 @@ def maml_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return maml_iter_merge(dataloaders, config)
 
   else:
