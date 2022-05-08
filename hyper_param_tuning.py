@@ -82,7 +82,7 @@ if __name__ == '__main__':
                         
                         if args.dataset == "vlcs":
                             n_loop = 50
-                            cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index {:} --val_index {:}'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop, args.test_index, args.val_index)
+                            cmd = 'python main.py --model_name=adp_invar_anti_causal --dataset=vlcs --data_dir="/scratch/midway3/yiboj/data/VLCS" --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --n_outer_loop={:} --hyper_param_tuning --test_index {:} --val_index {:}'.format(reg_lambda, reg_lambda_2, filename, gamma, n_loop, args.test_index, args.val_index)
                             run_cmd(cmd)
 
                         if args.dataset == "pacs":
