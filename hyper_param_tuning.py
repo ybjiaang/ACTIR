@@ -114,7 +114,7 @@ if __name__ == '__main__':
           cmd = 'python main.py --lr=1e-2 --n_outer_loop=100 --model_name=irm --causal_dir_syn=anti --classification --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(reg_lambda, filename)
           run_cmd(cmd)              
         if args.dataset == "vlcs":
-            cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="./vlcs/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
+            cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="/scratch/midway3/yiboj/data/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
             run_cmd(cmd)
         if args.dataset == "pacs":
             cmd = 'python main.py --model_name=irm --dataset=pacs --data_dir="./pacs/PACS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
@@ -124,6 +124,6 @@ if __name__ == '__main__':
             run_cmd(cmd)
         if args.dataset == "camelyon17":
             n_loop = 20
-            cmd = 'python -u main.py --data_dir="./Camelyon17" --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
+            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
             run_cmd(cmd)
                         
