@@ -142,6 +142,7 @@ if __name__ == '__main__':
   parser.add_argument('--save_test_phi', action='store_true', help='whether to save phi for finetune test')
   parser.add_argument('--nb_workers', type=int, default= 16, help='number of workers for dataLoaders')
   parser.add_argument('--random_seed', type=int, default= 0, help='random seed')
+  parser.add_argument('--balanced_dataset', action='store_true', help='imbalanced or balanced dataset')
 
   args = parser.parse_args()
 

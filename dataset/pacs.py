@@ -61,7 +61,7 @@ class PACS(MultipleDomainDataset):
 
             path = os.path.join(config.data_dir, environment)
             env_dataset = ImageFolder(path,
-                transform=env_transform)
+                transform=env_transform)  
 
             if i == test_i:
                 self.test_data_finetune = torch.utils.data.Subset(env_dataset, np.random.choice(len(env_dataset), test_finetune_size, replace=False))
@@ -115,6 +115,11 @@ if __name__ == '__main__':
     # dataset
     parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist')
     
+    parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
+    parser.add_argument('--val_index', type=int, default= 1, help='which dataset to val, it has to be strictly positive')
+    parser.add_argument('--downsample', action='store_true', help='whether to downsample')
+    parser.add_argument('--resnet_dim', type=int, default= 8, help='resnet dimension')
+
     # synthetic dataset specifics
     parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal')
     parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')

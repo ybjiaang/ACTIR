@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import random
 
+from torchsampler import ImbalancedDatasetSampler
 import scipy.stats
 
 def seed_worker(worker_id):
@@ -102,7 +103,10 @@ def maml_iter_merge(itrs, config):
 
 def batchify(dataset, batch_size, config):
   if config.torch_loader:
-    return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker)], config)
+    if config.balanced_dataset:
+      return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, sampler=ImbalancedDatasetSampler(dataset), shuffle=False, num_workers=config.num_workers, worker_init_fn=seed_worker)], config)
+    else:
+      return itr_merge([torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker)], config)
   else:
     x, y = dataset
     total_length = len(x)
@@ -123,7 +127,10 @@ def env_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      if config.balanced_dataset:    
+        dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i],  sampler=ImbalancedDatasetSampler(dataset[i]), drop_last=True, batch_size=batch_size, shuffle=False, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      else:
+        dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i],  drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return itr_merge(dataloaders, config)
     # return torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=config.num_workers)
 
@@ -156,7 +163,10 @@ def maml_batchify(dataset, batch_size, config):
   if config.torch_loader:
     dataloaders = []
     for i in range(n_envs):
-      dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i], drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      if config.balanced_dataset: 
+        dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i],  sampler=ImbalancedDatasetSampler(dataset[i]), drop_last=True, batch_size=batch_size, shuffle=False, num_workers=config.num_workers, worker_init_fn=seed_worker))
+      else:
+        dataloaders.append(torch.utils.data.DataLoader(dataset=dataset[i],  drop_last=True, batch_size=batch_size, shuffle=True, num_workers=config.num_workers, worker_init_fn=seed_worker))
     return maml_iter_merge(dataloaders, config)
 
   else:
