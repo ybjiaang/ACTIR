@@ -106,7 +106,7 @@ if __name__ == '__main__':
     if args.dataset == "color_mnist" or args.dataset == "anti":
       args.irm_reg_lambda_list = np.logspace(-2, 4, num=30)
     else:
-      args.irm_reg_lambda_list = [0.1, 1, 5, 10, 0.01, 20, 100, 150, 200]
+      args.irm_reg_lambda_list = [0.1, 1, 5, 10, 0.01]
   if args.model_name == "irm":
     n_loop = 50
     for reg_lambda in args.irm_reg_lambda_list:
@@ -117,13 +117,14 @@ if __name__ == '__main__':
             cmd = 'python main.py --model_name=irm --dataset=vlcs --data_dir="/scratch/midway3/yiboj/data/VLCS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
             run_cmd(cmd)
         if args.dataset == "pacs":
+            n_loop = 25
             cmd = 'python main.py --model_name=irm --dataset=pacs --data_dir="./pacs/PACS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
             run_cmd(cmd)
         if args.dataset == "color_mnist":
             cmd = 'python main.py --classification --lr 1e-2 --n_outer_loop={:} --model_name=irm --dataset=color_mnist --phi_odim=8 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(n_loop, reg_lambda, filename)
             run_cmd(cmd)
         if args.dataset == "camelyon17":
-            n_loop = 20
+            n_loop = 25
             cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
             run_cmd(cmd)
                         

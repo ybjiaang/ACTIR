@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
   args.model_save_dir += "/" + str(args.random_seed) + "_" + str(args.dataset)
   if args.dataset == "vlcs" or args.dataset == "pacs":
-    args.model_save_dir += "_" + str(args.test_index)# + "_" + str(args.n_outer_loop)
+    args.model_save_dir += "_" + str(args.test_index) + "_" + str(args.resnet_dim)
     #if args.dataset == "pacs":
     #    args.model_save_dir += "_" + str(args.n_outer_loop)
   print(args.model_save_dir)

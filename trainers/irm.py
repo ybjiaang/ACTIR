@@ -45,10 +45,10 @@ class IRM():
         for env_ind in range(n_train_envs):
           x, y = train[env_ind]
           f_beta, _ = self.model(x)
-          scale = torch.tensor(1.).to(self.config.device).requires_grad_()
-          error = self.criterion(f_beta * scale, y)
-          # penalty += grad(error, self.model.beta, create_graph=True)[0].pow(2).mean()
-          penalty += grad(error, scale, create_graph=True)[0].pow(2).mean()
+          # scale = torch.tensor(1.).to(self.config.device).requires_grad_()
+          error = self.criterion(f_beta, y)
+          penalty += grad(error, self.model.beta, create_graph=True)[0].pow(2).mean()
+          # penalty += grad(error, scale, create_graph=True)[0].pow(2).mean()
           loss += error
 
         self.optimizer.zero_grad()
@@ -104,6 +104,8 @@ class IRM():
 
   def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
     model = copy.deepcopy(self.model)
+    if len(test_finetune_dataset) == 0:
+      return model
     param_to_update_inner_loop  = model.beta
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 

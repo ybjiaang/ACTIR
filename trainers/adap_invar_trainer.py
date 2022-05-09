@@ -268,6 +268,9 @@ class AdaptiveInvariantNNTrainer():
   def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 128,  n_loop = 20, projected_gd = False):
     model = copy.deepcopy(self.model)
 
+    if len(test_finetune_dataset) == 0:
+      return model
+
     param_to_update_inner_loop  = model.beta
 
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_tune_lr)

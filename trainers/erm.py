@@ -110,6 +110,8 @@ class ERM():
 
   def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
     model = copy.deepcopy(self.model)
+    if len(test_finetune_dataset) == 0:
+      return model
     param_to_update_inner_loop  = model.beta
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 

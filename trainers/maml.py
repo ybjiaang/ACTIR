@@ -124,7 +124,8 @@ class LinearMAML():
 
   def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
     model = copy.deepcopy(self.model)
-
+    if len(test_finetune_dataset) == 0:
+      return (model, [model.beta])
     param_to_update_inner_loop  = model.beta
     # model.freeze_all()
     # model.beta.zero_()
