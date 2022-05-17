@@ -64,7 +64,7 @@ class ERM():
         if self.classification:
           print(f"Bse Test Error {base_accuracy_count.item()/total} ")
 
-  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 32, print_flag = True):
+  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 1024, print_flag = True):
 
     test_model = self.model
     if input_model is not None:
@@ -108,7 +108,7 @@ class ERM():
             'optimizer_state_dict': self.optimizer.state_dict(),
             }, self.model_path)
 
-  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
+  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 100):
     model = copy.deepcopy(self.model)
     if len(test_finetune_dataset) == 0:
       return model

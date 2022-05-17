@@ -35,11 +35,26 @@ class FolderDataset(Dataset):
   def __init__(self, folder):
     self.files = os.listdir(folder)
     self.folder = folder
+    self.all_tensors = []
+    for idx in range(len(self.files)):
+      tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
+      self.all_tensors.append(tensor_dict)
   def __len__(self):
     return len(self.files)
   def __getitem__(self, idx):
-    tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
+    # tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
+    tensor_dict = self.all_tensors[idx]
     return tensor_dict['phi'], tensor_dict['y']
+
+# class FolderDataset(Dataset):
+#   def __init__(self, folder):
+#     self.files = os.listdir(folder)
+#     self.folder = folder
+#   def __len__(self):
+#     return len(self.files)
+#   def __getitem__(self, idx):
+#     tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
+#     return tensor_dict['phi'], tensor_dict['y']
 
 def printModelParam(model):
   for name, param in model.named_parameters():
@@ -405,7 +420,7 @@ def standalone_tunning_test(trainer, config, test_dataset, adaptive = False, n_f
   finetuned_losses = [ ]
 
   for i in range(config.n_fine_tune_tests):
-    finetune_dataset = torch.utils.data.Subset(test_dataset, np.random.choice(len(test_dataset), n_fine_tune_points, replace=False))
+    finetune_dataset = torch.utils.data.Subset(test_dataset,  np.random.choice(len(test_dataset), n_fine_tune_points, replace=False))
     if not adaptive:
       model = trainer.finetune_test(finetune_dataset, rep_learning_flag = True)
       finetuned_loss = trainer.test(test_dataset, input_model = model, rep_learning_flag = True, print_flag=False)

@@ -17,6 +17,9 @@ class LinearMAML():
     # define loss
     self.criterion = loss_fn
     self.fine_inner_lr = config.fine_tune_lr
+    # 1e-4 too small for adaptation
+    # if self.fine_inner_lr < 1e-2:
+    #   self.fine_inner_lr *= 100
 
     # define optimizer
     self.param_to_update_inner_loop = [self.model.beta]
@@ -84,7 +87,7 @@ class LinearMAML():
             'optimizer_state_dict': self.meta_optimizer.state_dict(),
             }, self.model_path)
   
-  def test(self, test_dataset, rep_learning_flag = False, batch_size = 32, input_model = None, print_flag=True):
+  def test(self, test_dataset, rep_learning_flag = False, batch_size = 1024, input_model = None, print_flag=True):
     
     fast_weights = None
     test_model = self.model
@@ -122,7 +125,7 @@ class LinearMAML():
     return loss.item()/total
 
 
-  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 128):
+  def finetune_test(self, test_finetune_dataset, rep_learning_flag = False, batch_size = 100):
     model = copy.deepcopy(self.model)
     if len(test_finetune_dataset) == 0:
       return (model, [model.beta])

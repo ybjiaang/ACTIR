@@ -143,6 +143,7 @@ if __name__ == '__main__':
   parser.add_argument('--nb_workers', type=int, default= 16, help='number of workers for dataLoaders')
   parser.add_argument('--random_seed', type=int, default= 0, help='random seed')
   parser.add_argument('--balanced_dataset', action='store_true', help='imbalanced or balanced dataset')
+  parser.add_argument('--maml_only', action='store_true', help='maml only test')
 
   args = parser.parse_args()
 
@@ -432,16 +433,19 @@ if __name__ == '__main__':
                       irm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
 
     else:
-      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
-      model.to(args.device)
-      trainer = IRM(model, criterion, args)
-      embedding_dataset = FolderDataset(trainer.emb_path)
+      if args.maml_only:
+        pass
+      else:
+        model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
+        model.to(args.device)
+        trainer = IRM(model, criterion, args)
+        embedding_dataset = FolderDataset(trainer.emb_path)
 
-      irm_acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        irm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
-      
-      np.save(fine_saved_dir + "/irm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(irm_acc_lists))    
+        irm_acc_lists = []
+        for n_tune_points in  args.n_fine_tune_points:
+          irm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+        
+        np.save(fine_saved_dir + "/irm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(irm_acc_lists))    
 
   """ ERM """
   if args.model_name == "erm" or args.compare_all_invariant_models:
@@ -472,16 +476,20 @@ if __name__ == '__main__':
                   for n_tune_points in  args.n_fine_tune_points:
                       erm_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
-      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
-      model.to(args.device)
-      trainer = ERM(model, criterion, args)
-      embedding_dataset = FolderDataset(trainer.emb_path)
+      if args.maml_only:
+        pass
+      else:
+        print("\n")
+        model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
+        model.to(args.device)
+        trainer = ERM(model, criterion, args)
+        embedding_dataset = FolderDataset(trainer.emb_path)
 
-      erm_acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        erm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
-      
-      np.save(fine_saved_dir + "/erm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(erm_acc_lists))
+        erm_acc_lists = []
+        for n_tune_points in  args.n_fine_tune_points:
+          erm_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, n_fine_tune_points = n_tune_points))
+        
+        np.save(fine_saved_dir + "/erm_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(erm_acc_lists))
 
   """ MAML """
   if args.model_name == "maml" or args.compare_all_invariant_models:
@@ -513,6 +521,7 @@ if __name__ == '__main__':
         # for n_tune_points in  args.n_fine_tune_points:
         #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
+      print("\n")
       model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
       model.to(args.device)
       trainer = LinearMAML(model, criterion, args)
@@ -587,17 +596,21 @@ if __name__ == '__main__':
             for n_tune_points in  args.n_fine_tune_points:
               anti_causal_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset))
     else:
-      model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
-      model.to(args.device)
-      trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
-      embedding_dataset = FolderDataset(trainer.emb_path)
+      if args.maml_only:
+        pass
+      else:
+        print("\n")
+        model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
+        model.to(args.device)
+        trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args, causal_dir = False)
+        embedding_dataset = FolderDataset(trainer.emb_path)
 
-      adp_invar_anti_acc_lists = []
-      for n_tune_points in  args.n_fine_tune_points:
-        adp_invar_anti_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, adaptive=True, n_fine_tune_points = n_tune_points))
+        adp_invar_anti_acc_lists = []
+        for n_tune_points in  args.n_fine_tune_points:
+          adp_invar_anti_acc_lists.append(standalone_tunning_test(trainer, args, embedding_dataset, adaptive=True, n_fine_tune_points = n_tune_points))
 
-      np.save(fine_saved_dir + "/anti_causal_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(adp_invar_anti_acc_lists))
-      
+        np.save(fine_saved_dir + "/anti_causal_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(adp_invar_anti_acc_lists))
+        
 
   # """ Adaptive Invariant Causal """
   # if args.model_name == "adp_invar" or args.compare_all_invariant_models:
@@ -668,4 +681,4 @@ if __name__ == '__main__':
       plt.legend(loc=4, fontsize=15, title='Algo')
       # plt.ylim([0, 1])
 
-      plt.savefig(str(args.test_index) + "_all_fine_tune_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+ ".png")
+      plt.savefig(str(args.random_seed) + "_" + str(args.test_index) + "_all_fine_tune_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+ ".png")

@@ -62,7 +62,21 @@ class PACS(MultipleDomainDataset):
             path = os.path.join(config.data_dir, environment)
             env_dataset = ImageFolder(path,
                 transform=env_transform)  
+            # def make_weights_for_balanced_classes(images, nclasses):                        
+            #     count = [0] * nclasses                                                      
+            #     for item in images:                                                         
+            #         count[item[1]] += 1                                                     
+            #     weight_per_class = [0.] * nclasses   
+            #     N = float(sum(count))  
+            #     c_list = []  
+            #     for c in count:
+            #         c = c/N       
+            #         c_list.append(c)                           
+            #     print(c_list)                                          
 
+            # print(make_weights_for_balanced_classes(env_dataset.imgs, len(env_dataset.classes)))
+            
+            print(len(env_dataset))
             if i == test_i:
                 self.test_data_finetune = torch.utils.data.Subset(env_dataset, np.random.choice(len(env_dataset), test_finetune_size, replace=False))
                 self.test_data_unlabled = self.test_data_finetune

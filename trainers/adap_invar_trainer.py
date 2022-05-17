@@ -206,7 +206,7 @@ class AdaptiveInvariantNNTrainer():
       return np.concatenate(ret_list, axis=0)
 
 
-  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 32, print_flag = True):
+  def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 1024, print_flag = True):
 
     test_model = self.model
     if input_model is not None:
@@ -265,7 +265,7 @@ class AdaptiveInvariantNNTrainer():
             'optimizer_state_dict': self.outer_optimizer.state_dict(),
             }, self.model_path)
 
-  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 128,  n_loop = 20, projected_gd = False):
+  def finetune_test(self, test_finetune_dataset, test_unlabeld_dataset = None, rep_learning_flag = False, batch_size = 100,  n_loop = 20, projected_gd = False):
     model = copy.deepcopy(self.model)
 
     if len(test_finetune_dataset) == 0:
