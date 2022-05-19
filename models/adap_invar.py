@@ -44,9 +44,6 @@ class AdaptiveInvariantNN(nn.Module):
     else:
       f_eta = rep @ fast_eta[0]
 
-    # f_beta = torch.nn.functional.log_softmax(f_beta, dim=1)
-    # f_eta = torch.nn.functional.log_softmax(f_eta, dim=1)
-
     return f_beta, f_eta, rep
 
   def sample_base_classifer(self, x):

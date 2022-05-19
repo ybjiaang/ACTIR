@@ -23,13 +23,12 @@ class AdaptiveInvariantNNTrainer():
 
     # optimizer
     self.model.freeze_all_but_etas()
-    # self.inner_optimizer = torch.optim.SGD(self.model.etas.parameters(), lr=1e-2)
+    
     self.fine_tune_lr = config.fine_tune_lr
     self.test_inner_optimizer = torch.optim.Adam(self.model.etas.parameters(), lr=config.fine_tune_lr)
 
     self.model.freeze_all_but_beta()
-    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=config.lr) #, weight_decay=1e-3)
-    # self.outer_optimizer = torch.optim.SGD(self.model.parameters(),lr=1e-2)
+    self.outer_optimizer = torch.optim.Adam(self.model.parameters(),lr=config.lr) 
 
     self.reg_lambda = reg_lambda
     self.reg_lambda_2 = config.reg_lambda_2
@@ -47,91 +46,26 @@ class AdaptiveInvariantNNTrainer():
       if not os.path.exists(self.emb_path):
         os.makedirs(self.emb_path)
 
-  def calculate_eta(self, x, y, b):
-    """ 
-    x.shape = n, fea
-    y.shape = n, 1
-    b = fea, 1
-    """
-    M = SampleCovariance(x, x, mean_centering = False)
-    if self.causal_dir:
-      M_reg = SampleCovariance(x, x, mean_centering = True)
-    else:
-      M_reg = ConditionalCovaraince(x,y) 
-      # M_reg = SampleCovariance(x, x, mean_centering = True)
-    LHS = torch.mean(x * y, dim = 0, keepdim=True).T - M @ b
-    # print(LHS)
-    RHS = M + self.reg_lambda * (M_reg @ b) @ (M_reg @ b).T + 0.001 * torch.eye(x.shape[1])
-    # print(RHS)
-    # print(torch.linalg.svd(RHS))
-
-    # eta = torch.linalg.lstsq(RHS, LHS).solution
-    eta = torch.inverse(RHS) @ LHS
-    # print(eta)
-    # exit(0)
-    return eta
-
   def reg_loss(self, f_beta, f_eta, y, end_ind):
     
     if self.classification:
       if self.causal_dir:
-        # reg_loss = 0
-        # for i in range(self.num_class):
-        #   reg_loss += HSICLoss(f_beta[:,[i]], f_eta[:,[i]])
         reg_loss = HSICLoss(f_beta, f_eta)
-        # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
-        # reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
       else:
-        # reg_loss = 0
-        # for i in range(self.num_class):
-        #   reg_loss += DiscreteConditionalHSICLoss(f_beta[:,[i]], f_eta[:,[i]], y)
-        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = DiscreteConditionalLinearHSICLoss(f_beta, f_eta, y)
-        # print(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
-        # reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
-        # print(reg_loss)
         reg_loss = torch.sum(torch.abs(DiscreteConditionalExpecationTest(f_beta, f_eta, y)))
-        # print(reg_loss)
-        # reg_loss = torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y))
-        # reg_loss = torch.pow(torch.sum(DiscreteConditionalExpecationTest(f_beta, f_eta, y)),2)
-        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y).pow(2).mean() 
-        # print(reg_loss)
-        # print(DiscreteConditionalHSICLoss(x[:,[0]], x[:,[1]] + x[:,[0]], y))
-        # reg_loss = torch.norm(ConditionalCovaraince(f_beta, f_eta, y))
     else:
       if self.causal_dir:
-        # reg_loss = HSICLoss(f_beta, f_eta) #+ 0.1 * torch.mean(f_eta * f_eta)
-        # reg_loss = torch.pow(torch.mean(f_beta * f_eta), 2) +  torch.mean(f_eta * f_eta)
         reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
       else:
-        # reg_loss = ConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
-        # reg_loss = DiscreteConditionalExpecationTest(f_beta, f_eta, y) # pow does not work
-        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y)) #.pow(2).mean()
-        # reg_loss = DiscreteConditionalHSICLoss(f_beta, f_eta, y)
+        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y)) 
     
     return reg_loss
-
-  # def inner_loss(self, x, y, env_ind):
-  #   f_beta, f_eta, _ = self.model(x, env_ind)
-      
-  #   loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * self.reg_loss(f_beta, f_eta, y, env_ind)
-
-  #   return loss
   
   def contraint_loss(self, f_beta, f_eta, y, env_ind):
-    # f_beta_normalized = torch.nn.functional.log_softmax(f_beta, dim=1)
-    # f_eta_normalized = torch.nn.functional.log_softmax(f_eta, dim=1)
-    # reg_loss = self.reg_loss(f_beta_normalized, f_eta_normalized, y, env_ind)
+
     reg_loss = self.reg_loss(f_beta, f_eta, y, env_ind)
     loss = self.criterion(f_beta + f_eta, y) + self.reg_lambda * reg_loss
-    # print(f_beta)
-    # # print(f_eta)
-    # print(f_beta + f_eta)
-    # print(y)
-    # print(reg_loss.item())
-    # if self.reg_lambda > 1.0:
-    #   loss /= self.reg_lambda
+
     return loss
 
   def gradient_penalty(self, f_beta, f_eta, y, env_ind):
@@ -146,14 +80,11 @@ class AdaptiveInvariantNNTrainer():
     n_train_envs = len(train_dataset)
 
     self.model.freeze_all_but_beta()
-    # self.model.free_all()
     self.model.train()
 
     for t in tqdm(range(self.config.n_outer_loop)):
       for train in env_batchify(train_dataset, batch_size, self.config):
 
-        # update phi
-        # self.model.freeze_all_but_phi()
         phi_loss = 0
         loss = 0
         total = 0
@@ -161,27 +92,19 @@ class AdaptiveInvariantNNTrainer():
         for env_ind in range(n_train_envs):
             x, y = train[env_ind]
             f_beta, f_eta, _ = self.model(x, env_ind)
-            # print(self.reg_loss(x[:,[0]], x[:,[1]], y, env_ind).item())
-            # print(x)
+
             contraint_loss = self.contraint_loss(f_beta, f_eta, y, env_ind)
             phi_loss += self.gamma * self.criterion(f_beta + f_eta, y) + (1 - self.gamma) * self.criterion(f_beta, y) 
-            # phi_loss += self.reg_lambda_2 * self.gradient_penalty(f_beta, f_eta, y, env_ind)
             gradient = grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0].pow(2).mean()
             phi_loss += self.reg_lambda_2 * gradient
-            # scale = torch.tensor(1.).to(self.config.device).requires_grad_()
-            # phi_loss += self.reg_lambda_2 * grad(self.criterion(f_beta * scale, y), [scale], create_graph=True)[0].pow(2).mean()
-            # print(f_beta , f_eta)
-            # phi_loss += self.reg_lambda_2 * torch.norm(grad(contraint_loss, self.model.etas[env_ind], create_graph=True)[0])#.pow(2).mean()
-            
+                        
             if self.classification:
               _, base_predicted = torch.max(f_beta.data, 1)
               base_loss += (base_predicted == y).sum()
               _, predicted = torch.max((f_beta + f_eta).data, 1)
               loss += (predicted == y).sum()
               total += y.size(0)
-        # print(gradient.detach().numpy())
-        # if self.reg_lambda_2 > 0:
-        #   phi_loss /= self.reg_lambda_2
+
         self.outer_optimizer.zero_grad()
         phi_loss.backward()
         self.outer_optimizer.step()
@@ -212,7 +135,6 @@ class AdaptiveInvariantNNTrainer():
     if input_model is not None:
       test_model = input_model
 
-    # print(self.model.etas[0])
     test_model.eval()
     loss = 0
     total = 0
@@ -274,9 +196,6 @@ class AdaptiveInvariantNNTrainer():
     param_to_update_inner_loop  = model.beta
 
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_tune_lr)
-    # model.freeze_all() # use this so that I can set etas to zeros when I call test again
-    # model.set_etas_to_zeros()
-    # model.beta.zero_()
     model.beta.requires_grad=True
       
     if self.causal_dir:
@@ -319,12 +238,7 @@ class AdaptiveInvariantNNTrainer():
         M = (M - torch.outer(mean_phi, mean_phi)) * total_num_entries / (total_num_entries - 1)
 
     model.train()
-    # model.freeze_all_but_etas()
 
-    # test set is ususally small
-    # for param in self.model.Phi.parameters():
-    #   print(param.data)
-    # print(self.model.etas[0])
     for i in range(self.config.n_finetune_loop):
       batch_num = 0
       for x, y in batchify(test_finetune_dataset, batch_size, self.config):
@@ -338,7 +252,6 @@ class AdaptiveInvariantNNTrainer():
         loss.backward()
         self.test_inner_optimizer.step()
 
-      # print(loss.item())
 
       if self.causal_dir and not self.classification:
         """ projected gradient descent """
@@ -349,14 +262,6 @@ class AdaptiveInvariantNNTrainer():
             alpha = self.model.etas[0].T @ v
             self.model.etas[0].sub_(alpha * v/norm)
 
-        # print(self.model.etas[0].T @ M @ self.model.beta )
-      # print(i)
-      # for param in self.model.Phi.parameters():
-      #   print(param.data)
-      # print(i, self.model.etas[0])
-      # print(f_beta)
-      # print(f_beta + f_eta)
-      # print(y)
       if i % 10 == 0 and self.config.verbose:
           print(loss.item()/batch_num) 
     return model

@@ -17,9 +17,6 @@ class LinearMAML():
     # define loss
     self.criterion = loss_fn
     self.fine_inner_lr = config.fine_tune_lr
-    # 1e-4 too small for adaptation
-    # if self.fine_inner_lr < 1e-2:
-    #   self.fine_inner_lr *= 100
 
     # define optimizer
     self.param_to_update_inner_loop = [self.model.beta]
@@ -130,9 +127,7 @@ class LinearMAML():
     if len(test_finetune_dataset) == 0:
       return (model, [model.beta])
     param_to_update_inner_loop  = model.beta
-    # model.freeze_all()
-    # model.beta.zero_()
-    # model.beta.requires_grad=True
+
     self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=self.fine_inner_lr)
 
     model.train()
@@ -152,45 +147,4 @@ class LinearMAML():
     fast_weights = [model.beta]
 
     return (model, fast_weights)    
-    
-    model = copy.deepcopy(self.model)
-    param_to_update_inner_loop  = model.beta
 
-    # loss = 0
-    # for x, y in batchify(test_finetune_dataset, batch_size, self.config):
-    #   f_beta, _ = model(x)
-    #   loss += self.criterion(f_beta, y)
-
-    # grad = torch.autograd.grad(loss, param_to_update_inner_loop)
-    # fast_weights = list(map(lambda p: p[1] - self.fast_update_lr * p[0], zip(grad, param_to_update_inner_loop)))
-
-    # for k in range(1, self.n_inner_update):
-    #   loss = 0
-    #   for x, y in batchify(test_finetune_dataset, batch_size, self.config):
-    #     f_beta, _ = model(x, fast_beta = fast_weights)
-    #     loss += self.criterion(f_beta, y)
-
-    #   grad = torch.autograd.grad(loss, fast_weights)
-    #   fast_weights = list(map(lambda p: p[1] - self.fast_update_lr * p[0], zip(grad, fast_weights)))
-
-    model = copy.deepcopy(self.model)
-    param_to_update_inner_loop  = model.beta
-    self.test_inner_optimizer = torch.optim.Adam([param_to_update_inner_loop], lr=1e-2)
-
-    model.train()
-    for i in range(self.config.n_finetune_loop):
-      batch_num = 0
-      for x, y in batchify(test_finetune_dataset, batch_size, self.config):
-        loss = 0
-        batch_num += 1
-
-        f_beta, _ = model(x)
-        loss += self.criterion(f_beta, y) 
-
-        self.test_inner_optimizer.zero_grad()
-        loss.backward()
-        self.test_inner_optimizer.step()
-    
-    fast_weights = [model.beta]
-
-    return (model, fast_weights)

@@ -31,8 +31,8 @@ with open(filename, 'a', newline='') as file:
         colname.append("Anti Causal " + str(point))
     writer.writerow(colname)
 
-for _ in range(20):
-    cmd = ' python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr=0.001 --n_outer_loop=15 --fine_tune_lr 1e-3 --reg_lambda=2.1544346900318834 --reg_lambda_2=46.41588833612777 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --run_fine_tune_test --n_fine_tune_tests 10 --cvs_dir={:} --random_seed -1 --n_fine_tune_points'.format(filename)
+for _ in range(50):
+    cmd = ' python main.py --compare_all_invariant_models --classification --dataset=color_mnist --lr=0.001 --n_outer_loop=15 --fine_tune_lr 1e-2 --reg_lambda=2.1544346900318834 --reg_lambda_2=46.41588833612777 --phi_odim 8 --irm_reg_lambda 1487.3521072935118 --run_fine_tune_test --n_fine_tune_tests 100 --cvs_dir={:} --random_seed -1 --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)
     run_cmd(cmd)

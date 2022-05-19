@@ -31,9 +31,8 @@ for test_id in [0, 1, 2, 3]:
         for random_seed in [0, 1, 2, 3, 4]:
             full_dir = dir + str(random_seed) + '_' + dataset + '_' + str(test_id) + '_' + str(resnet_dim) + '/saved_npy'
             filename = model_name + "_fine_lr_" + str(real_lr) + "_fine_nloops_" + str(n_finetune_loop)+".npy"
-            array = np.load(full_dir + '/' + filename)[:-1]
+            array = np.load(full_dir + '/' + filename)
             avg = np.average(array, axis=1)
-            avg = np.delete(avg, 1, 0)
             avgs[random_seed, :] = avg
 
 
@@ -58,7 +57,6 @@ for test_id in [0, 1, 2, 3]:
     plt.tight_layout()
     plt.xticks(np.array(n_fine_tune_points))
     plt.legend(loc=4, fontsize=15, title='Algo')
-    # plt.ylim([0, 1])
 
     fig_name = dataset + "_" + str(test_id) + ".png"
 

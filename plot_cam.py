@@ -32,8 +32,6 @@ for model_name in ['erm', 'irm', 'maml', 'anti_causal']:
         array = np.load(full_dir + '/' + filename)
         avg = np.average(array, axis=1)
         avgs[random_seed, :] = avg
-        print(model_name, random_seed)
-        print(avg)
 
 
     df = create_DF(avgs, np.array(n_fine_tune_points))
@@ -57,7 +55,6 @@ plt.setp(ax.get_yticklabels(), fontsize=10)
 plt.tight_layout()
 plt.xticks(np.array(n_fine_tune_points))
 plt.legend(loc=4, fontsize=15, title='Algo')
-# plt.ylim([0, 1])
 
 fig_name = dataset + ".png"
 

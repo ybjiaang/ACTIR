@@ -33,7 +33,6 @@ from dataset.pacs import PACS
 from models.adap_invar import AdaptiveInvariantNN
 from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
-from trainers.adap_invar_trainer_meta import AdaptiveInvariantNNTrainerMeta
 from trainers.erm import ERM
 from trainers.irm import IRM
 from trainers.hsic import HSIC
@@ -163,8 +162,6 @@ if __name__ == '__main__':
   args.model_save_dir += "/" + str(args.random_seed) + "_" + str(args.dataset)
   if args.dataset == "vlcs" or args.dataset == "pacs":
     args.model_save_dir += "_" + str(args.test_index) + "_" + str(args.resnet_dim)
-    #if args.dataset == "pacs":
-    #    args.model_save_dir += "_" + str(args.n_outer_loop)
   print(args.model_save_dir)
   if not os.path.exists(args.model_save_dir):
     os.makedirs(args.model_save_dir)
@@ -292,7 +289,6 @@ if __name__ == '__main__':
               nn.Linear(8, 8),
               nn.ReLU(),
               nn.Linear(8, phi_odim)
-              # nn.Linear(input_dim, phi_odim)
           )
 
   if args.dataset == "bike":
@@ -305,14 +301,6 @@ if __name__ == '__main__':
           )
 
   if args.dataset == "color_mnist":
-    # hidden_dims = 64
-    # lin1 = nn.Linear(input_dim, hidden_dims)
-    # lin2 = nn.Linear(hidden_dims, hidden_dims)
-    # lin3 = nn.Linear(hidden_dims, phi_odim)
-    # for lin in [lin1, lin2, lin3]:
-    #     nn.init.xavier_uniform_(lin.weight)
-    #     nn.init.zeros_(lin.bias)
-    # Phi = nn.Sequential(lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
 
     class Net(nn.Module):
         def __init__(self):
@@ -368,35 +356,7 @@ if __name__ == '__main__':
                 d_out=args.resnet_dim,
                 **args.model_kwargs)
     args.phi_odim = Phi.d_out
-    # Phi = ResNet(Phi)
 
-    # args.phi_odim = 32
-    # lin = nn.Linear(feature.d_out, args.phi_odim)
-    # Phi = nn.Sequential(feature, lin)
-
-  
-    # reshape = torch.nn.Flatten(start_dim=-3, end_dim=- 1)
-    # hidden_dims = 256
-    # lin1 = nn.Linear(input_dim, hidden_dims)
-    # lin2 = nn.Linear(hidden_dims, hidden_dims)
-    # lin3 = nn.Linear(hidden_dims, phi_odim)
-    # for lin in [lin1, lin2, lin3]:
-    #     nn.init.xavier_uniform_(lin.weight)
-    #     nn.init.zeros_(lin.bias)
-    # Phi = nn.Sequential(reshape, lin1, nn.ReLU(True), lin2, nn.ReLU(True), lin3)
-    
-  """ HSIC """
-  if args.model_name == "hsic" or args.compare_all_invariant_models:
-    if not args.run_fine_tune_test_standalone:
-      model = BaseClass(input_dim, Phi, phi_dim = args.phi_odim).to(args.device)
-      trainer = HSIC(model, criterion, args)
-
-      # print("hsic training...")
-      # trainer.train(train_dataset, args.batch_size)
-
-      # print("hsic test...")
-      # hsic_loss = trainer.test(test_dataset)
-      hsic_loss = 0
 
   """ IRM """
   if args.model_name == "irm" or args.compare_all_invariant_models:
@@ -461,9 +421,6 @@ if __name__ == '__main__':
       print("erm test...")
       erm_loss = trainer.test(test_dataset)
 
-      # print("erm val...")
-      # erm_loss_val = trainer.test(val_dataset)
-
       if args.run_fine_tune_test:
           for n_finetune_loop in [args.n_finetune_loop]:
               print(n_finetune_loop)
@@ -511,14 +468,10 @@ if __name__ == '__main__':
               trainer.config.n_finetune_loop = n_finetune_loop
               for learning_rate in [args.fine_tune_lr]:
                   print("learning rate:" + str(learning_rate))
-                  # trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=learning_rate)
                   trainer.fine_inner_lr = learning_rate
                   maml_finetune_loss = []
                   for n_tune_points in  args.n_fine_tune_points:
                       maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
-        # maml_finetune_loss = []
-        # for n_tune_points in  args.n_fine_tune_points:
-        #  maml_finetune_loss.append(fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points))
     else:
       print("\n")
       model.load_state_dict(torch.load(trainer.model_path, map_location=torch.device('cpu'))['model_state_dict'])
@@ -546,8 +499,6 @@ if __name__ == '__main__':
       print("adp_invar anti-causal test...")
       adp_invar_anti_causal_base_loss, _ = trainer.test(test_dataset)
 
-      # print("adp_invar anti-causal test val ...")
-      # adp_invar_anti_causal_base_loss_val, _ = trainer.test(val_dataset)
       adp_invar_anti_causal_base_loss_val = 0
 
       if args.hyper_param_tuning:
@@ -560,9 +511,6 @@ if __name__ == '__main__':
         disentanglment_dataset = dataset.sample_envs_z()
         ret_val = model.get_activation(disentanglment_dataset)
         
-
-        # for node in range(8):
-        #   fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
         colors = ['r', 'b', 'g']
         fig, axs = plt.subplots(2, 1, sharex=True, sharey=True)
         for z_ind, z in enumerate(env.z_range()):
@@ -610,40 +558,11 @@ if __name__ == '__main__':
         np.save(fine_saved_dir + "/anti_causal_" + "fine_lr_" + str(args.fine_tune_lr) + "_fine_nloops_" + str(args.n_finetune_loop)+".npy", np.array(adp_invar_anti_acc_lists))
         
 
-  # """ Adaptive Invariant Causal """
-  # if args.model_name == "adp_invar" or args.compare_all_invariant_models:
-  #   if not args.run_fine_tune_test_standalone:
-  #     model = AdaptiveInvariantNN(args.n_envs, input_dim, Phi, args, out_dim = out_dim, phi_dim = args.phi_odim).to(args.device)
-  #     trainer = AdaptiveInvariantNNTrainer(model, criterion, args.reg_lambda, args)
-
-  #     print("adp_invar training...")
-  #     trainer.train(train_dataset, args.batch_size)
-  #     trainer.test_inner_optimizer = torch.optim.Adam(trainer.model.etas.parameters(), lr=1e-3)
-  #     torch.save(trainer.model, './anti.pt')
-  #     print("adp_invar test...")
-  #     adp_invar_base_loss, adp_invar_loss = trainer.test(test_dataset)
-
-  #     trainer.config.n_finetune_loop = 2
-      
-  #     if args.hyper_param_tuning:
-  #       with open(args.cvs_dir, 'a', newline='') as file: 
-  #         writer = csv.writer(file)
-  #         row = [args.reg_lambda, args.reg_lambda_2, args.gamma, adp_invar_base_loss]
-  #         writer.writerow(row)
-
-  #     if args.run_fine_tune_test:
-  #       causal_proj_gd_losses = []
-  #       causal_gd_losses = []
-  #       for n_tune_points in  args.n_fine_tune_points:
-  #         causal_gd_loss, causal_proj_gd_loss = fine_tunning_test(trainer, args, test_finetune_dataset, test_dataset, n_tune_points, test_unlabelled_dataset, True)
-  #         causal_proj_gd_losses.append(causal_proj_gd_loss)
-  #         causal_gd_losses.append(causal_gd_loss)
-
   if args.compare_all_invariant_models:
     if not args.run_fine_tune_test_standalone:
       with open(args.cvs_dir, 'a', newline='') as file: 
         writer = csv.writer(file)
-        row = [hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss]
+        row = [irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss]
         if args.run_fine_tune_test:
           for i, n_tune_points in enumerate(args.n_fine_tune_points):
             row.append(irm_finetune_loss[i])
@@ -651,7 +570,7 @@ if __name__ == '__main__':
             row.append(maml_finetune_loss[i])
             row.append(anti_causal_finetune_loss[i])
         writer.writerow(row)
-      print(hsic_loss, irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss)
+      print(irm_loss, erm_loss, maml_train_loss, maml_loss, adp_invar_anti_causal_base_loss)
     else:
       fig = plt.figure()
       plt.clf()
