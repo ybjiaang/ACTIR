@@ -560,7 +560,6 @@ if __name__ == '__main__':
       def disentanglment_experiment(dataset, model, config, plot_z = False):
         disentanglment_dataset = dataset.sample_envs_z()
         ret_val = model.get_activation(disentanglment_dataset)
-
         
 
         # for node in range(8):
