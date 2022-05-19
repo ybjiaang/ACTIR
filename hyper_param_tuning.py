@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         if args.dataset == "camelyon17":
                             n_loop = 25
                             lr = 1e-4
-                            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --lr={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, lr, n_loop)
+                            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --resnet_dim 128 --model_name=adp_invar_anti_causal  --dataset=camelyon17 --classification --reg_lambda={:} --reg_lambda_2={:} --cvs_dir={:} --gamma={:} --lr={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, reg_lambda_2, filename, gamma, lr, n_loop)
                             run_cmd(cmd)
 
   if not args.irm_reg_lambda_list:
@@ -121,10 +121,11 @@ if __name__ == '__main__':
             cmd = 'python main.py --model_name=irm --dataset=pacs --data_dir="./pacs/PACS" --classification --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --test_index {:} --val_index {:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop, args.test_index, args.val_index)
             run_cmd(cmd)
         if args.dataset == "color_mnist":
-            cmd = 'python main.py --classification --lr 1e-2 --n_outer_loop={:} --model_name=irm --dataset=color_mnist --phi_odim=8 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(n_loop, reg_lambda, filename)
+            n_loop = 15
+            cmd = 'python main.py --classification --lr 1e-3 --n_outer_loop={:} --model_name=irm --dataset=color_mnist --phi_odim=8 --irm_reg_lambda={:} --cvs_dir={:} --hyper_param_tuning'.format(n_loop, reg_lambda, filename)
             run_cmd(cmd)
         if args.dataset == "camelyon17":
             n_loop = 25
-            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
+            cmd = 'python -u main.py --data_dir="/scratch/midway2/yiboj/data" --resnet_dim 128 --model_name=irm  --dataset=camelyon17 --classification  --irm_reg_lambda={:} --cvs_dir={:} --n_outer_loop={:} --hyper_param_tuning'.format(reg_lambda, filename, n_loop)
             run_cmd(cmd)
                         
