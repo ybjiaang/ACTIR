@@ -11,7 +11,7 @@ def run_cmd(cmd):
 	logging.info("Running command: {:}".format(cmd))
 	subprocess.check_call(cmd,shell=True)
 
-log_directory = "./log_syn_erm_classification"
+log_directory = "./log_syn_classification"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
