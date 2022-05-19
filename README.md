@@ -6,12 +6,20 @@
 
 Results will be saved as csv files in  folder `log_syn_classification`. You can use `csv_reading_script.py` to get summary statistics. 
 
+To get disentanglement plot `disentangle_syn.png`, run
+
+`python main.py --model_name=adp_invar_anti_causal --lr 1e-2 --classification --causal_dir_syn=anti --disentagnle_plot`
+
 
 ## Color MNIST
 
 `python color_mnist_running_script.py`
 
 Results will be saved as csv files in  folder `log_color_mnist`. You can use `csv_reading_script.py` to get summary statistics. 
+
+To get disentanglement plot `disentangle_color_mnist.png`, run
+
+`python main.py --model_name=adp_invar_anti_causal --classification --dataset=color_mnist --disentagnle_plot --lr=0.001 --n_outer_loop=15 --fine_tune_lr 1e-2 --reg_lambda=2.1544346900318834 --reg_lambda_2=46.41588833612777 --phi_odim 8`
 
 ## Camlyon17 
 

@@ -142,7 +142,8 @@ if __name__ == '__main__':
   parser.add_argument('--nb_workers', type=int, default= 16, help='number of workers for dataLoaders')
   parser.add_argument('--random_seed', type=int, default= 0, help='random seed')
   parser.add_argument('--balanced_dataset', action='store_true', help='imbalanced or balanced dataset')
-  parser.add_argument('--maml_only', action='store_true', help='maml only test')
+  parser.add_argument('--maml_only', action='store_true', help='maml only adaptive test')
+  parser.add_argument('--disentagnle_plot', action='store_true', help='plot disengtanlement graphs')
 
   args = parser.parse_args()
 
@@ -528,7 +529,8 @@ if __name__ == '__main__':
           fig.savefig("disentangle_" + config.dataset + ".png")
 
 
-      # disentanglment_experiment(env, trainer, args)
+      if args.disentagnle_plot:
+        disentanglment_experiment(env, trainer, args) 
 
 
       if args.run_fine_tune_test:
