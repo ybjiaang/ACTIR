@@ -246,7 +246,6 @@ if __name__ == '__main__':
       print("color mnist dataset")
       env = ColorMnist()
     
-
     args.n_envs = env.num_train_evns
 
     # create training data
