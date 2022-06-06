@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, '../')
 
-from misc import DiscreteConditionalExpecationTest
+# from misc import DiscreteConditionalExpecationTest
 
 # generating data
 class Envs(object):
@@ -49,6 +49,40 @@ class CausalControlDataset(Envs):
   def phi_u(self, x):
     return np.cos(np.pi * x) * x
 
+class CausalControlDescentDataset(Envs):
+  def __init__(self, d_x_z_parent = 1, d_x_y_child = 1):
+    super(CausalControlDescentDataset, self).__init__()
+    self.d_x_z_parent = d_x_z_parent
+    self.d_x_y_child = d_x_y_child
+    self.env_means = [0.95, 0.8, 0.2, 0.1]
+    self.num_total_envs = len(self.env_means)
+    self.num_train_evns = self.num_total_envs - 2
+    self.input_dim = self.d_x_z_parent + self.d_x_y_child 
+    self.num_class = 2
+
+  def sample_envs(self, env_ind, n = 100):
+    def xor(a, b):
+      return np.abs(a-b) # Assumes both inputs are either 0 or 1
+    x_y_parent = np.random.binomial(1, 0.5, (n,1))
+    factor = np.random.binomial(1, 0.75, (n,1))
+    y = (2*x_y_parent - 1) * (2* factor - 1)
+    y = (y + 1)//2
+
+    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    z = (2*y - 1) * (2* factor - 1)
+    
+    x_y_perp = xor((z + 1)//2, x_y_parent)
+
+    return torch.Tensor(np.concatenate([x_y_parent, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
+  
+  def sample_base_classifer(self, x):
+   raise Exception("This does not work")
+
+  def phi_base(self, x):
+    return x * x
+  
+  def phi_u(self, x):
+    return np.cos(np.pi * x) * x
 
 class AntiCausalControlDataset(Envs):
   def __init__(self, d_x_z_perp = 1, d_x_y_perp = 1):
@@ -132,6 +166,6 @@ class AntiCausalControlDatasetMultiClass(Envs):
     return np.cos(np.pi * x) * x
 
 if __name__ == '__main__':
-  env = AntiCausalControlDatasetMultiClass()
-  x, y = env.sample_envs(0, n = 100)
-  print(torch.pow(torch.sum(DiscreteConditionalExpecationTest(x[:,[0]], x[:,[1]], y)),2))
+  env = CausalControlDescentDataset()
+  x, y = env.sample_envs(0, n = 10)
+  # print(torch.pow(torch.sum(DiscreteConditionalExpecationTest(x[:,[0]], x[:,[1]], y)),2))

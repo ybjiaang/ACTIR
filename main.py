@@ -24,7 +24,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
-from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, AntiCausalControlDatasetMultiClass
+from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, CausalControlDescentDataset, AntiCausalControlDatasetMultiClass
 from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
 from dataset.camelyon17 import Camelyon17
@@ -113,7 +113,7 @@ if __name__ == '__main__':
   parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, vlcs, camelyon17')
   
   # synthetic dataset specifics
-  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi')
+  parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi or causal_descent')
   parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
 
   # bike sharing specifics
@@ -191,6 +191,10 @@ if __name__ == '__main__':
     if args.causal_dir_syn == "anti-multi":
       print("Sampling from causal anti multi-class datasets")
       env = AntiCausalControlDatasetMultiClass()  
+
+    if args.causal_dir_syn == "causal_descent":
+      print("Sampling from causal causal descent datasets")
+      env = CausalControlDescentDataset()  
 
     args.n_envs = env.num_train_evns
 
