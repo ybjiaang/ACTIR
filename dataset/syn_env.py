@@ -1,3 +1,4 @@
+from re import U
 import numpy as np
 import torch 
 from torch import nn
@@ -63,15 +64,20 @@ class CausalControlDescentDataset(Envs):
   def sample_envs(self, env_ind, n = 100):
     def xor(a, b):
       return np.abs(a-b) # Assumes both inputs are either 0 or 1
+    
+
+    u_factor = -1 * np.random.binomial(1, self.env_means[env_ind], (n,1)) + 1
     x_y_parent = np.random.binomial(1, 0.5, (n,1))
+    x_y_parent = xor(x_y_parent, u_factor)
+
     factor = np.random.binomial(1, 0.75, (n,1))
     y = (2*x_y_parent - 1) * (2* factor - 1)
+
     y = (y + 1)//2
 
-    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    z = (2*y - 1) * (2* factor - 1)
+    z = y #(2*y - 1) * (2* factor - 1)
     
-    x_y_perp = xor((z + 1)//2, x_y_parent)
+    x_y_perp = xor(z, u_factor)
 
     return torch.Tensor(np.concatenate([x_y_parent, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
   
