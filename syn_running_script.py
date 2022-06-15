@@ -33,7 +33,7 @@ with open(filename, 'a', newline='') as file:
 
 for _ in range(100):
     # cmd = 'python main.py --compare_all_invariant_models --lr 1e-2 --fine_tune_lr 1e-2 --classification --causal_dir_syn=anti --cvs_dir={:} --run_fine_tune_test --n_fine_tune_tests 100 --random_seed -1 --n_fine_tune_points'.format(filename)
-    cmd = 'python main.py --compare_all_invariant_models --lr 1e-2 --fine_tune_lr 1e-2 --classification --causal_dir_syn=causal_descent --reg_lambda=3.562247890262442 --reg_lambda_2=4.520353656360243 --irm_reg_lambda=137.3823795883264 --run_fine_tune_test --n_fine_tune_tests 100 --random_seed -1 --cvs_dir={:} --n_fine_tune_points'.format(filename)
+    cmd = 'python main.py --compare_all_invariant_models --lr 1e-2 --fine_tune_lr 1e-2 --classification --causal_dir_syn=causal_descent --reg_lambda=2.2122162910704493 --reg_lambda_2=18.873918221350976 --irm_reg_lambda=356.2247890262444 --run_fine_tune_test --n_fine_tune_tests 100 --random_seed -1 --cvs_dir={:} --n_fine_tune_points'.format(filename)
     for point in n_fine_tune_points:
         cmd += " " + str(point)
     run_cmd(cmd)

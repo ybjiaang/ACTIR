@@ -65,19 +65,52 @@ class CausalControlDescentDataset(Envs):
     def xor(a, b):
       return np.abs(a-b) # Assumes both inputs are either 0 or 1
     
+    def binarize(x):
+      x_binary = x >= 0
+      return x_binary.astype(int)
+    
 
-    u_factor = -1 * np.random.binomial(1, self.env_means[env_ind], (n,1)) + 1
-    x_y_parent = np.random.binomial(1, 0.5, (n,1))
+    # u_factor = -1 * np.random.binomial(1, self.env_means[env_ind], (n,1)) + 1
+    u_factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    x_y_parent = np.random.binomial(1, 0.6, (n,1))
     x_y_parent = xor(x_y_parent, u_factor)
 
     factor = np.random.binomial(1, 0.75, (n,1))
-    y = (2*x_y_parent - 1) * (2* factor - 1)
+    # y = (2*x_y_parent - 1) * (2* factor - 1)
+    y = xor(x_y_parent, factor)
 
-    y = (y + 1)//2
+    # y = (y + 1)//2
 
-    z = y #(2*y - 1) * (2* factor - 1)
+    # x_y_perp = xor(y, u_factor)
+
+    # x_y_perp = xor(y, factor)
+    x_y_perp = xor(y, u_factor)
+    # x_y_perp = x_y_parent + x_y_perp
+    # z = (2*y - 1) * (2* factor - 1)
+
+
+    # # u_factor = np.random.normal(scale=1, size = (n,1))
+    # u_factor = 2* np.random.binomial(1, self.env_means[env_ind], (n,1)) - 1
+    # print(u_factor)
+    # u_factor = u_factor + np.random.normal(scale=1, size = (n,1))
+    # x_y_parent = np.random.binomial(1, 0.5, (n,1)) * 2 - 1
+    # x_y_parent = x_y_parent + u_factor * 0.3
+
+    # y = binarize(x_y_parent)
+    # factor = np.random.binomial(1, 0.75, (n,1))
+    # y = xor(y, factor)
+
+    # # factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+
+    # # x_y_perp = xor(y, factor)
+
+    # x_y_perp = y *2 - 1 + u_factor
+    # print(sum(y))
+    # print(y)
+    # print(u_factor)
+    # print(x_y_perp)
+    # print(x_y_parent)
     
-    x_y_perp = xor(z, u_factor)
 
     return torch.Tensor(np.concatenate([x_y_parent, x_y_perp], axis=1)), torch.squeeze(torch.Tensor(y).long())
   
@@ -173,5 +206,6 @@ class AntiCausalControlDatasetMultiClass(Envs):
 
 if __name__ == '__main__':
   env = CausalControlDescentDataset()
-  x, y = env.sample_envs(0, n = 10)
+  x, y = env.sample_envs(0, n = 100)
+  x, y = env.sample_envs(3, n = 100)
   # print(torch.pow(torch.sum(DiscreteConditionalExpecationTest(x[:,[0]], x[:,[1]], y)),2))
