@@ -63,7 +63,7 @@ class CausalControlDescentDataset(Envs):
 
   def sample_envs(self, env_ind, n = 100):
     def xor(a, b):
-      return np.abs(a-b) # Assumes both inputs are either 0 or 1
+      return 1 - np.abs(a-b) # Assumes both inputs are either 0 or 1
     
     def binarize(x):
       x_binary = x >= 0
@@ -72,7 +72,7 @@ class CausalControlDescentDataset(Envs):
 
     # u_factor = -1 * np.random.binomial(1, self.env_means[env_ind], (n,1)) + 1
     u_factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
-    x_y_parent = np.random.binomial(1, 0.6, (n,1))
+    x_y_parent = np.random.binomial(1, 0.5, (n,1))
     x_y_parent = xor(x_y_parent, u_factor)
 
     factor = np.random.binomial(1, 0.75, (n,1))
@@ -105,7 +105,7 @@ class CausalControlDescentDataset(Envs):
     # # x_y_perp = xor(y, factor)
 
     # x_y_perp = y *2 - 1 + u_factor
-    # print(sum(y))
+    print(sum(y))
     # print(y)
     # print(u_factor)
     # print(x_y_perp)
@@ -206,6 +206,6 @@ class AntiCausalControlDatasetMultiClass(Envs):
 
 if __name__ == '__main__':
   env = CausalControlDescentDataset()
-  x, y = env.sample_envs(0, n = 100)
-  x, y = env.sample_envs(3, n = 100)
+  x, y = env.sample_envs(0, n = 1000)
+  x, y = env.sample_envs(3, n = 1000)
   # print(torch.pow(torch.sum(DiscreteConditionalExpecationTest(x[:,[0]], x[:,[1]], y)),2))
