@@ -71,20 +71,24 @@ class CausalControlDescentDataset(Envs):
     
 
     # u_factor = -1 * np.random.binomial(1, self.env_means[env_ind], (n,1)) + 1
-    u_factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    # u_factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
     x_y_parent = np.random.binomial(1, 0.5, (n,1))
-    x_y_parent = xor(x_y_parent, u_factor)
+    # x_y_parent = xor(x_y_parent, u_factor)
 
     factor = np.random.binomial(1, 0.75, (n,1))
     # y = (2*x_y_parent - 1) * (2* factor - 1)
     y = xor(x_y_parent, factor)
+
+    factor = np.random.binomial(1, self.env_means[env_ind], (n,1))
+    x_y_perp = xor(y, factor)
+
 
     # y = (y + 1)//2
 
     # x_y_perp = xor(y, u_factor)
 
     # x_y_perp = xor(y, factor)
-    x_y_perp = xor(y, u_factor)
+    x_y_perp = xor(x_y_perp, x_y_parent)
     # x_y_perp = x_y_parent + x_y_perp
     # z = (2*y - 1) * (2* factor - 1)
 
@@ -105,7 +109,7 @@ class CausalControlDescentDataset(Envs):
     # # x_y_perp = xor(y, factor)
 
     # x_y_perp = y *2 - 1 + u_factor
-    print(sum(y))
+    # print(sum(y))
     # print(y)
     # print(u_factor)
     # print(x_y_perp)
