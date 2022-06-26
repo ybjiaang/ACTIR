@@ -25,7 +25,6 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
 from dataset.syn_env import CausalControlDataset, AntiCausalControlDataset, CausalControlDescentDataset, AntiCausalControlDatasetMultiClass
-from dataset.bike_env import BikeSharingDataset
 from dataset.color_mnist import ColorMnist
 from dataset.camelyon17 import Camelyon17
 from dataset.vlcs import VLCS
@@ -110,15 +109,11 @@ if __name__ == '__main__':
   parser.add_argument('--n_fine_tune_points', nargs='+', type=int, help='how many points for finetuning')
 
   # dataset
-  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, bike, color_mnist, vlcs, camelyon17')
+  parser.add_argument('--dataset', type=str, default= "syn", help='type of experiment: syn, color_mnist, vlcs, camelyon17')
   
   # synthetic dataset specifics
   parser.add_argument('--causal_dir_syn', type=str, default= "anti", help='anti or causal or anti-multi or causal_descent')
   parser.add_argument('--syn_dataset_train_size', type=int, default= 1024, help='size of synthetic dataset per env')
-
-  # bike sharing specifics
-  parser.add_argument('--bike_test_season', type=int, default= 1, help='what season to test our model')
-  parser.add_argument('--bike_year', type=int, default= 0, help='what year to test our model')
 
   # domainbed specifics 
   parser.add_argument('--test_index', type=int, default= 3, help='which dataset to test')
@@ -241,9 +236,6 @@ if __name__ == '__main__':
       test_finetune_dataset, test_unlabelled_dataset, test_dataset= env.sample_envs(train_val_test=2)
 
   else:
-    if args.dataset == "bike":
-      print("bikesharing dataset")
-      env = BikeSharingDataset(test_season=args.bike_test_season, year=args.bike_year)
     if args.dataset == "color_mnist":
       print("color mnist dataset")
       env = ColorMnist()
@@ -294,15 +286,6 @@ if __name__ == '__main__':
               nn.Linear(8, 8),
               nn.ReLU(),
               nn.Linear(8, phi_odim)
-          )
-
-  if args.dataset == "bike":
-    Phi = nn.Sequential(
-              nn.Linear(input_dim, 8),
-              nn.ReLU(),
-              nn.Linear(8, 16),
-              nn.ReLU(),
-              nn.Linear(16, phi_odim)
           )
 
   if args.dataset == "color_mnist":
