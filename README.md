@@ -10,7 +10,7 @@ To get disentanglement plot `disentangle_syn.png`, run
 
 `python main.py --model_name=adp_invar_anti_causal --lr 1e-2 --classification --causal_dir_syn=anti --disentagnle_plot`
 
-## Synthetic Dataset -- Counter-example
+## Synthetic Dataset -- Counterexample
 
 `python syn_running_script.py --dataset=counter-example`
 
