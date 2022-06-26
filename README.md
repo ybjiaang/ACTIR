@@ -1,4 +1,4 @@
-# Code for Invariant and Transportable Representations for Anti-Causal Domain Shifts
+# Code for "Invariant and Transportable Representations for Anti-Causal Domain Shifts"
 
 ## Synthetic Dataset
 
