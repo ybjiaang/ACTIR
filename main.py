@@ -34,7 +34,6 @@ from models.base_classifer import BaseClass
 from trainers.adap_invar_trainer import AdaptiveInvariantNNTrainer
 from trainers.erm import ERM
 from trainers.irm import IRM
-from trainers.hsic import HSIC
 from trainers.maml import LinearMAML
 from misc import create_DF, standalone_tunning_test, fine_tunning_test, BaseLoss, initialize_torchvision_model, FolderDataset
 
