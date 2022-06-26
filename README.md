@@ -48,7 +48,7 @@ Use `dataset/DomianBed/download.py --dataset=vlcs` to download dataset and chang
 Models and tensors will be saved in `./saved_model` and one can run `run_adaptive.sh` to run adaptive tests. You can run it with different random seed
 
 ## Hyper-Parameter
-See `hyper_param_tuning.py` for details on running hyper parameter search. 
+See `hyper_param_tuning.py` for details on running hyper parameter search. Feel free to run your own hyperparameter search.
 
 ## Others
 Set `--nb_workers=0` if you see this warning `Warning: Cannot set number of intraop threads after parallel work has started or after set_num_threads call when using native parallel backend`
