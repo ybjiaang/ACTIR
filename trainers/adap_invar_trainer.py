@@ -57,7 +57,7 @@ class AdaptiveInvariantNNTrainer():
       if self.causal_dir:
         reg_loss = SampleCovariance(f_beta, f_eta)[0][0]
       else:
-        reg_loss = torch.norm(DiscreteConditionalExpecationTest(f_beta, f_eta, y)) 
+        reg_loss = torch.sum(torch.abs(DiscreteConditionalExpecationTest(f_beta, f_eta, y)))
     
     return reg_loss
   
