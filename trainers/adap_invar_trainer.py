@@ -52,6 +52,7 @@ class AdaptiveInvariantNNTrainer():
       if self.causal_dir:
         reg_loss = HSICLoss(f_beta, f_eta)
       else:
+        # currently, only this reguarlizer is used !!!
         reg_loss = torch.sum(torch.abs(DiscreteConditionalExpecationTest(f_beta, f_eta, y)))
     else:
       if self.causal_dir:
