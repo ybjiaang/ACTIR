@@ -113,8 +113,8 @@ class AdaptiveInvariantNNTrainer():
       if self.config.verbose:
         print(phi_loss.item()/(n_train_envs*batch_size))
         if self.classification:
-          print(f"Bse Test Error {base_loss.item()/total} ")
-          print(f"Test loss {loss.item()/total} ")
+          print(f"Bse Test Acc {base_loss.item()/total} ")
+          print(f"Test Acc {loss.item()/total} ")
 
   def get_activation(self, test_dataset):
     self.model.eval()
@@ -170,13 +170,13 @@ class AdaptiveInvariantNNTrainer():
       total += y.size(0)
 
     if print_flag: 
-        print(f"Bse Test Error {base_loss.item()/total} ")
+        print(f"Bse Test Acc {base_loss.item()/total} ")
         print(f"Bse Test Std {np.std(np.array(base_all_prediction).astype(int))} ")
         print(mean_confidence_interval(np.array(base_all_prediction).astype(int)))
 
-        print(f"Test loss {loss.item()/total} ")
-        print(f"Test Std {np.std(np.array(all_predicition).astype(int))} ")
-        print(mean_confidence_interval(np.array(all_predicition).astype(int)))
+        # print(f"Test Acc {loss.item()/total} ")
+        # print(f"Test Std {np.std(np.array(all_predicition).astype(int))} ")
+        # print(mean_confidence_interval(np.array(all_predicition).astype(int)))
     
 
     return base_loss.item()/total, loss.item()/total

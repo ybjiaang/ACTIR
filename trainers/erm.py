@@ -62,7 +62,7 @@ class ERM():
       if t % 1 == 0 and self.config.verbose:
         print(loss_print.item()/count)
         if self.classification:
-          print(f"Bse Test Error {base_accuracy_count.item()/total} ")
+          print(f"Bse Test Acc {base_accuracy_count.item()/total} ")
 
   def test(self, test_dataset, rep_learning_flag = False, input_model = None, batch_size = 1024, print_flag = True):
 
@@ -96,7 +96,7 @@ class ERM():
       total += y.size(0)
 
     if print_flag:
-      print(f"Bse Test Error {loss.item()/total} ")
+      print(f"Bse Test Acc {loss.item()/total} ")
       print(f"Bse Test Std {np.std(np.array(all_prediction).astype(int))} ")
       print(mean_confidence_interval(np.array(all_prediction).astype(int)))
     return loss.item()/total

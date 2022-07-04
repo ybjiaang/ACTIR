@@ -46,16 +46,6 @@ class FolderDataset(Dataset):
     tensor_dict = self.all_tensors[idx]
     return tensor_dict['phi'], tensor_dict['y']
 
-# class FolderDataset(Dataset):
-#   def __init__(self, folder):
-#     self.files = os.listdir(folder)
-#     self.folder = folder
-#   def __len__(self):
-#     return len(self.files)
-#   def __getitem__(self, idx):
-#     tensor_dict = torch.load(f"{self.folder}/{self.files[idx]}")
-#     return tensor_dict['phi'], tensor_dict['y']
-
 def printModelParam(model):
   for name, param in model.named_parameters():
     print(name, param.data)
@@ -268,16 +258,6 @@ def HSICLoss(x, y, s_x=1, s_y=1, epsilon = 1e-6, cuda=False):
     H = H.double().cuda() 
   HSIC = torch.trace(torch.mm(L,torch.mm(H,torch.mm(K,H))))/((m-1)**2)
   return HSIC
-
-  # n,_ = x.shape #batch size
-  # Kx = GaussianKernelMatrix(x,s_x)
-  # Ky = GaussianKernelMatrix(y,s_y)
-  # Gx = Centering_GramMatrix(Kx)
-  # Gy = Centering_GramMatrix(Ky)
-  # Rx = Gx @ torch.inverse(Gx + n * epsilon * torch.eye(n))
-  # Ry = Gy @ torch.inverse(Gy + n * epsilon * torch.eye(n))
-  # HSIC = torch.trace(Rx @ Ry)
-  # return HSIC
 
 def LinearHSICLoss(x, y, cuda=True):
   m,_ = x.shape #batch size

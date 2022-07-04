@@ -116,7 +116,7 @@ class LinearMAML():
 
       total += y.size(0)
     if print_flag:
-      print(f"Bse Test Error {loss.item()/total} ") 
+      print(f"Bse Test Acc {loss.item()/total} ") 
       print(f"Bse Test Std {np.std(np.array(all_prediction).astype(int))} ")
       print(mean_confidence_interval(np.array(all_prediction).astype(int)))
     return loss.item()/total
